@@ -1,0 +1,138 @@
+Before you start building, here are some important clarifications:
+1. Automated Data Fetching - CRITICAL
+The app should automatically fetch and update job market data daily (vacancies, packages, trends) from:
+
+Naukri.com
+LinkedIn Jobs
+Indeed
+GitHub API (for technology popularity)
+npm API (for JavaScript libraries)
+
+Daily cron job at 2 AM should:
+
+Scrape job listings for: React, Angular, Java, Python, Node.js, Django, Spring Boot, MongoDB, MySQL
+Extract: Total vacancies, average package range, top hiring companies
+Update database automatically
+Show "Last Updated: [timestamp]" on technology cards
+
+2. Google Sheets Auto-Sync
+When a student fills the inquiry form, data should:
+
+Save to database (PostgreSQL)
+Automatically add a new row to Google Sheets (zeeexshanxkhan@gmail.com)
+Create 2 sheets:
+
+Sheet 1: All inquiries
+Sheet 2: Only phone numbers of students who haven't joined (for easy copy-paste to WhatsApp)
+
+
+
+3. Tablet Optimization - MUST HAVE
+
+All drag-and-drop should work with touch/finger (not just mouse)
+Buttons minimum 48px height for easy tapping
+Disable text selection during drag
+Add haptic feedback (vibration) on successful drag/drop
+Test in Chrome DevTools mobile emulator (tablet view)
+PWA should work offline after first load
+
+4. Admin Panel Requirements
+Password-protected admin section to:
+
+View all inquiries in a table
+Mark student as "Joined" or "Pending"
+Add/edit/delete companies
+Add/edit/delete student placements (with photo upload)
+Manually override auto-fetched job data if incorrect
+Export data to Excel (.xlsx file)
+View scraper logs (to check if daily job fetch succeeded)
+
+5. Drag-and-Drop Course Explorer
+Should work exactly like Infinite Craft game:
+
+Drag "React" from Frontend section
+Drag "Node.js" from Backend section
+Drop them together → Creates new card "MERN Stack Developer"
+Shows: Average package, total vacancies, job roles, top companies
+Can combine 2-3 technologies (e.g., React + Node.js + MongoDB = MERN)
+
+Pre-define these combinations:
+
+React + Node.js + MongoDB = MERN Stack (8-15 LPA)
+Java + Spring Boot + MySQL = Java Full Stack (7-14 LPA)
+Python + Django + PostgreSQL = Python Full Stack (8-16 LPA)
+HTML + CSS + JavaScript = Frontend Developer (4-8 LPA)
+
+6. Placement Cards Flow
+
+Home screen shows company cards (TCS, Infosys, Wipro, etc.)
+Click company → Shows all students placed in that company
+Click student card → Full details modal with:
+
+Student photo
+Name, Package, Phone (hidden by default with "Show" button)
+Profile/Role (Java Developer, etc.)
+Course completed at our institute
+Review/testimonial
+Interview rounds cleared
+Study duration
+
+
+
+7. Tech Stack Confirmation
+Please use:
+
+Frontend: React + Vite (not Create React App)
+Styling: Tailwind CSS (core classes only, no custom config)
+Drag-Drop: @dnd-kit/core (better for touch than react-dnd)
+Backend: Node.js + Express
+Database: PostgreSQL (as you mentioned)
+Scraping: Puppeteer (headless browser for dynamic content)
+Cron Jobs: node-cron
+PWA: Workbox for offline support
+
+8. Branding
+
+Primary color: Blue (#1E40AF)
+Secondary color: Red (#DC2626)
+Institute name: "Programmers Point"
+Logo: (I'll provide after you start)
+Font: Inter or Poppins (modern, clean)
+
+9. Important Notes
+
+Phone numbers should be in format: +91XXXXXXXXXX (for easy WhatsApp export)
+Date of Birth should be date picker (DD/MM/YYYY format)
+Form should have validation (email format, phone 10 digits, etc.)
+Success message after form submission: "Thank you! We'll contact you soon."
+All timestamps should be in IST (Indian Standard Time)
+
+10. Deployment
+
+Frontend: Vercel
+Backend: Railway.app or Render.com (free tier is fine)
+Database: PostgreSQL on Railway/Render
+Give me both URLs after deployment
+
+Should I proceed with these requirements?"
+
+
+🤔 Should You Start the App?
+My Recommendation: YES, but...
+✅ Start the app IF:
+
+You've sent the above clarifications to Replit
+Replit confirms they understood all points
+You're ready to provide:
+
+Your institute logo (PNG/SVG)
+2-3 real placement examples for testing
+Your Google account for Sheets integration
+
+
+
+❌ WAIT if:
+
+You're still unsure about any feature
+You want to add more requirements
+You haven't decided on tablet model yet
