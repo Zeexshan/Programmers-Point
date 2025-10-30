@@ -5,6 +5,7 @@ import { insertInquirySchema, insertCompanySchema, insertPlacementSchema } from 
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
+import { getUncachableGoogleSheetClient } from "./googleSheets";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== INQUIRIES ==========
@@ -249,6 +250,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(logs);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== IMPORT / EXPORT ==========
+  
+  // CSV Import for technologies
+  app.post("/api/import/csv", async (req, res) => {
+    try {
+      const { csvText } = req.body;
+      
+      if (!csvText) {
+        return res.status(400).json({ error: "CSV text is required" });
+      }
+      
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        return res.status(400).json({ error: "CSV must have header and at least one data row" });
+      }
+      
+      const headers = lines[0].split(',').map((h: string) => h.trim().replace(/"/g, ''));
+      const technologies = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map((v: string) => v.trim().replace(/"/g, ''));
+        
+        if (values.length >= 6) {
+          const categoryMap: Record<string, string> = {
+            'python': 'Backend',
+            'java': 'Backend',
+            'javascript': 'Frontend',
+            'typescript': 'Frontend',
+            'react': 'Frontend',
+            'angular': 'Frontend',
+            'vue': 'Frontend',
+            'node': 'Backend',
+            'express': 'Backend',
+            'django': 'Backend',
+            'spring': 'Backend',
+            'sql': 'Database',
+            'mysql': 'Database',
+            'mongodb': 'Database',
+            'postgresql': 'Database',
+            'html': 'Frontend',
+            'css': 'Frontend',
+          };
+          
+          const techName = values[0].toLowerCase();
+          let category = 'Other';
+          for (const [key, value] of Object.entries(categoryMap)) {
+            if (techName.includes(key)) {
+              category = value;
+              break;
+            }
+          }
+          
+          technologies.push({
+            name: values[0],
+            category,
+            vacancies: parseInt(values[1]) || 0,
+            avgPackage: values[2],
+            topCompanies: values[3],
+            lastUpdated: values[4],
+            description: values[5] || '',
+          });
+        }
+      }
+      
+      await storage.updateTechnologies(technologies);
+      await storage.createLog("csv_import", `Imported ${technologies.length} technologies from CSV`);
+      
+      res.json({ success: true, count: technologies.length });
+    } catch (error: any) {
+      console.error("CSV import error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Google Sheets Connection Status
+  app.get("/api/google-sheets/status", async (req, res) => {
+    try {
+      const sheets = await getUncachableGoogleSheetClient();
+      
+      res.json({ 
+        connected: true, 
+        message: "Google Sheets is connected and ready to use" 
+      });
+    } catch (error: any) {
+      res.json({ 
+        connected: false, 
+        message: error.message || "Google Sheets not connected. Please set up the connector in Replit." 
+      });
     }
   });
 

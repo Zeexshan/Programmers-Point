@@ -8,13 +8,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-md">
         <div className="container max-w-7xl mx-auto px-4 md:px-8">
-          <div className="flex items-center justify-between h-18">
-            <div className="flex items-center">
-              <img src={logoUrl} alt="Programmers Point" className="h-12" data-testid="img-logo" />
+          <div className="flex items-center justify-between h-16 md:h-18">
+            <div className="flex items-center py-2">
+              <img src={logoUrl} alt="Programmers Point" className="h-10 md:h-12 px-2 md:px-4" data-testid="img-logo" />
             </div>
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-6 lg:gap-8">
               <Link href="/" className="text-foreground hover:text-primary transition-colors" data-testid="link-home">
                 <span className="font-medium">Home</span>
               </Link>
@@ -25,14 +25,14 @@ export default function Home() {
                 <span className="font-medium">Courses</span>
               </Link>
               <Link href="/inquiry" data-testid="link-inquiry">
-                <Button size="lg" className="min-h-12">
+                <Button size="lg" className="min-h-12 px-6">
                   APPLY NOW
                 </Button>
               </Link>
             </div>
             <div className="md:hidden">
               <Link href="/inquiry" data-testid="link-inquiry-mobile">
-                <Button size="lg">
+                <Button size="lg" className="px-6">
                   APPLY NOW
                 </Button>
               </Link>
