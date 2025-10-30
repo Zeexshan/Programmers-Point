@@ -35,132 +35,123 @@ const techIcons: Record<string, any> = {
   "Express": SiNodedotjs,
 };
 
-// Predefined combinations
-const combinations: Record<string, any> = {
-  // Frontend Stacks
-  "CSS+HTML+JavaScript": {
-    name: "Frontend Developer",
-    package: "4-8 LPA",
-    vacancies: "8000+",
-    companies: ["TCS", "Infosys", "Wipro", "Accenture", "Cognizant"],
-    roles: ["UI Developer", "Web Designer", "Frontend Engineer"],
-    description: "Build beautiful, interactive websites and web applications"
-  },
-  "JavaScript+React": {
-    name: "React Developer",
-    package: "6-12 LPA",
-    vacancies: "6000+",
-    companies: ["Facebook", "Netflix", "Airbnb", "Uber", "Swiggy"],
-    roles: ["React Developer", "Frontend Engineer", "UI Specialist"],
-    description: "Create modern, dynamic user interfaces"
-  },
-  
-  // Full Stack Stacks
-  "MongoDB+Node.js+React": {
-    name: "MERN Stack Developer",
-    package: "8-15 LPA",
-    vacancies: "5000+",
-    companies: ["Flipkart", "Swiggy", "Zomato", "PayTM", "Ola"],
-    roles: ["Full Stack Developer", "MERN Developer", "JavaScript Engineer"],
-    description: "Full-stack JavaScript development with modern tools"
-  },
-  "Express+MongoDB+Node.js+React": {
-    name: "MERN Stack Developer",
-    package: "8-15 LPA",
-    vacancies: "5000+",
-    companies: ["Flipkart", "Swiggy", "Zomato", "PayTM", "Ola"],
-    roles: ["Full Stack Developer", "MERN Developer", "JavaScript Engineer"],
-    description: "Full-stack JavaScript development with modern tools"
-  },
-  "Java+MySQL+Spring Boot": {
-    name: "Java Full Stack Developer",
-    package: "7-14 LPA",
-    vacancies: "9000+",
-    companies: ["TCS", "Infosys", "Capgemini", "HCL", "Accenture"],
-    roles: ["Java Developer", "Backend Engineer", "Full Stack Java Dev"],
-    description: "Enterprise-level application development"
-  },
-  "Django+PostgreSQL+Python": {
-    name: "Python Full Stack Developer",
-    package: "8-16 LPA",
-    vacancies: "6000+",
-    companies: ["Google", "Instagram", "Spotify", "Netflix", "Amazon"],
-    roles: ["Python Developer", "Django Developer", "Backend Engineer"],
-    description: "AI-ready web development with Python"
-  },
-  "Django+MySQL+Python": {
-    name: "Python Full Stack Developer",
-    package: "8-16 LPA",
-    vacancies: "6000+",
-    companies: ["Google", "Instagram", "Spotify", "Netflix", "Amazon"],
-    roles: ["Python Developer", "Django Developer", "Backend Engineer"],
-    description: "Web development with Python and databases"
-  },
-  
-  // Backend Stacks
-  "Java+MySQL": {
-    name: "Java Backend Developer",
-    package: "5-12 LPA",
-    vacancies: "7000+",
-    companies: ["TCS", "Infosys", "Wipro", "HCL", "Tech Mahindra"],
-    roles: ["Backend Developer", "Java Engineer", "Server-side Developer"],
-    description: "Build robust backend systems"
-  },
-  "MySQL+Python": {
-    name: "Python Backend Developer",
-    package: "6-13 LPA",
-    vacancies: "5500+",
-    companies: ["Google", "Amazon", "Microsoft", "Netflix"],
-    roles: ["Backend Developer", "Python Engineer", "API Developer"],
-    description: "Backend development with Python"
-  },
-  "MongoDB+Node.js": {
-    name: "Node.js Backend Developer",
-    package: "6-13 LPA",
-    vacancies: "4500+",
-    companies: ["PayTM", "Ola", "Zomato", "Swiggy"],
-    roles: ["Backend Developer", "Node.js Engineer", "API Developer"],
-    description: "Fast, scalable backend with JavaScript"
-  },
-  
-  // Mobile Development
-  "JavaScript+React+React Native": {
-    name: "Mobile App Developer",
-    package: "7-14 LPA",
-    vacancies: "3500+",
-    companies: ["Flipkart", "Uber", "Discord", "Shopify"],
-    roles: ["Mobile Developer", "React Native Developer", "Cross-platform Dev"],
-    description: "Build iOS and Android apps with JavaScript"
-  },
-  "Java+Kotlin": {
-    name: "Android Developer",
-    package: "6-13 LPA",
-    vacancies: "4000+",
-    companies: ["Google", "Samsung", "Xiaomi", "PhonePe"],
-    roles: ["Android Developer", "Mobile Engineer", "App Developer"],
-    description: "Native Android app development"
-  },
-  
-  // Data Science Stacks
-  "Python+R+SQL": {
-    name: "Data Scientist",
-    package: "8-18 LPA",
-    vacancies: "3000+",
-    companies: ["Google", "Amazon", "Microsoft", "Flipkart"],
-    roles: ["Data Scientist", "ML Engineer", "Data Analyst"],
-    description: "Extract insights from data using advanced analytics"
-  },
-  
-  // DevOps Stacks
-  "Go+Python": {
-    name: "DevOps Engineer",
-    package: "8-16 LPA",
-    vacancies: "4000+",
-    companies: ["Google", "Amazon", "Microsoft", "Flipkart"],
-    roles: ["DevOps Engineer", "Site Reliability Engineer", "Cloud Engineer"],
-    description: "Automate and manage infrastructure"
+// Dynamic calculation helpers
+function calculateCombinedStats(selectedTechnologies: Technology[]) {
+  if (selectedTechnologies.length === 0) return null;
+
+  // Calculate total vacancies
+  const totalVacancies = selectedTechnologies.reduce((sum, tech) => {
+    return sum + (tech.vacancies || 0);
+  }, 0);
+
+  // Calculate average package range
+  const packageRanges = selectedTechnologies
+    .filter(tech => tech.avgPackage)
+    .map(tech => {
+      const matches = tech.avgPackage!.match(/(\d+)-(\d+)/);
+      if (matches) {
+        return { min: parseInt(matches[1]), max: parseInt(matches[2]) };
+      }
+      // Handle single number packages like "4.5 LPA"
+      const singleMatch = tech.avgPackage!.match(/(\d+\.?\d*)/);
+      if (singleMatch) {
+        const val = parseFloat(singleMatch[1]);
+        return { min: val, max: val };
+      }
+      return { min: 0, max: 0 };
+    });
+
+  const avgMin = packageRanges.length > 0
+    ? Math.round(packageRanges.reduce((sum, p) => sum + p.min, 0) / packageRanges.length)
+    : 0;
+
+  const avgMax = packageRanges.length > 0
+    ? Math.round(packageRanges.reduce((sum, p) => sum + p.max, 0) / packageRanges.length)
+    : 0;
+
+  // Merge unique companies
+  const allCompanies = selectedTechnologies
+    .filter(tech => tech.topCompanies)
+    .flatMap(tech => tech.topCompanies!.split(',').map(c => c.trim()))
+    .filter((company, index, self) => self.indexOf(company) === index)
+    .slice(0, 8); // Show top 8
+
+  // Merge skills/use cases from description field
+  const allSkills = selectedTechnologies
+    .filter(tech => tech.description)
+    .flatMap(tech => tech.description!.split(',').map(s => s.trim()))
+    .filter((skill, index, self) => self.indexOf(skill) === index)
+    .slice(0, 10); // Limit to 10 skills for better UI
+
+  // Generate smart title
+  const title = generateStackTitle(selectedTechnologies);
+
+  return {
+    title,
+    packageRange: avgMin > 0 && avgMax > 0 ? `${avgMin}-${avgMax} LPA` : "Competitive Package",
+    vacancies: totalVacancies,
+    companies: allCompanies,
+    skills: allSkills,
+    techCount: selectedTechnologies.length,
+    description: generateDescription(selectedTechnologies)
+  };
+}
+
+function generateStackTitle(techs: Technology[]): string {
+  const names = techs.map(t => t.name);
+
+  // Smart naming for common stacks
+  if (names.includes('React') && names.includes('Node.js') && names.includes('MongoDB')) {
+    return 'MERN Stack Developer';
   }
-};
+  if (names.includes('React') && names.includes('Express') && names.includes('Node.js') && names.includes('MongoDB')) {
+    return 'MERN Stack Developer';
+  }
+  if (names.includes('Java') && names.includes('Spring Boot')) {
+    return 'Java Full Stack Developer';
+  }
+  if (names.includes('Python') && names.includes('Django')) {
+    return 'Python Full Stack Developer';
+  }
+  if (names.includes('HTML') && names.includes('CSS') && names.includes('JavaScript')) {
+    return 'Frontend Developer';
+  }
+  if (names.includes('Angular') && names.includes('TypeScript')) {
+    return 'Angular Developer';
+  }
+
+  // Generic titles
+  if (techs.length === 1) {
+    return `${names[0]} Developer`;
+  }
+  if (techs.length === 2) {
+    return `${names[0]} + ${names[1]} Developer`;
+  }
+  if (techs.length === 3) {
+    return `${names[0]}, ${names[1]} & ${names[2]} Developer`;
+  }
+  return `Multi-Stack Developer (${techs.length} technologies)`;
+}
+
+function generateDescription(techs: Technology[]): string {
+  if (techs.length === 1) {
+    return techs[0].description || "Specialized technology development";
+  }
+  
+  const categories = [...new Set(techs.map(t => t.category))];
+  
+  if (categories.length === 1) {
+    if (categories[0] === 'Frontend') return "Build modern, responsive user interfaces";
+    if (categories[0] === 'Backend') return "Develop robust server-side applications";
+    if (categories[0] === 'Database') return "Design and manage data storage solutions";
+  }
+  
+  if (categories.includes('Frontend') && categories.includes('Backend')) {
+    return "Full-stack development across frontend and backend";
+  }
+  
+  return "Multi-technology development role with diverse skills";
+}
 
 function DraggableTech({ tech }: { tech: Technology }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -217,7 +208,7 @@ function DropZone({ selectedTechs, onRemove }: { selectedTechs: Technology[], on
               Drag and drop technologies here
             </p>
             <p className="text-sm text-muted-foreground">
-              Combine 2-4 technologies to explore career paths
+              Combine technologies to explore career paths (no limit!)
             </p>
           </div>
         </div>
@@ -254,7 +245,7 @@ function DropZone({ selectedTechs, onRemove }: { selectedTechs: Technology[], on
 
 export default function CourseExplorer() {
   const [selectedTechs, setSelectedTechs] = useState<Technology[]>([]);
-  const [combination, setCombination] = useState<any>(null);
+  const [result, setResult] = useState<any>(null);
 
   const { data: technologies, isLoading } = useQuery<Technology[]>({
     queryKey: ["/api/technologies"],
@@ -266,8 +257,8 @@ export default function CourseExplorer() {
     if (over && over.id === 'drop-zone' && active.data.current) {
       const tech = active.data.current as Technology;
       
-      // Allow up to 4 technologies for combinations like MERN + Express
-      if (!selectedTechs.find(t => t.id === tech.id) && selectedTechs.length < 4) {
+      // Allow unlimited technologies - no limit!
+      if (!selectedTechs.find(t => t.id === tech.id)) {
         const newSelection = [...selectedTechs, tech];
         setSelectedTechs(newSelection);
         
@@ -276,67 +267,49 @@ export default function CourseExplorer() {
           navigator.vibrate(200);
         }
         
-        // Check for combinations
-        checkCombination(newSelection);
+        // Calculate dynamic result
+        updateResult(newSelection);
+        
+        // Trigger confetti animation when 2+ techs selected!
+        if (newSelection.length >= 2) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8']
+          });
+          
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            });
+          }, 250);
+          
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            });
+          }, 400);
+        }
       }
     }
   };
 
-  const checkCombination = (techs: Technology[]) => {
-    if (techs.length < 2) {
-      setCombination(null);
-      return;
-    }
-
-    const techNames = techs.map(t => t.name).sort();
-    const key = techNames.join('+');
-    
-    if (combinations[key]) {
-      setCombination(combinations[key]);
-      
-      // Trigger confetti animation for valid combination!
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8']
-      });
-      
-      // Second burst for extra celebration
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 }
-        });
-      }, 250);
-      
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 }
-        });
-      }, 400);
-    } else {
-      // Generic combination
-      setCombination({
-        name: techNames.join(' + ') + " Developer",
-        package: "6-12 LPA",
-        vacancies: "2000+",
-        companies: ["TCS", "Infosys", "Wipro"],
-        description: "Multi-technology development role",
-        roles: ["Software Developer", "Full Stack Developer"],
-      });
-    }
+  const updateResult = (techs: Technology[]) => {
+    const calculatedResult = calculateCombinedStats(techs);
+    setResult(calculatedResult);
   };
 
   const removeTech = (id: string) => {
     const newSelection = selectedTechs.filter(t => t.id !== id);
     setSelectedTechs(newSelection);
-    checkCombination(newSelection);
+    updateResult(newSelection);
   };
 
   const frontend = technologies?.filter(t => t.category === "Frontend") || [];
@@ -411,8 +384,8 @@ export default function CourseExplorer() {
           <DropZone selectedTechs={selectedTechs} onRemove={removeTech} />
         </DndContext>
 
-        {/* Combination Result */}
-        {combination && (
+        {/* Dynamic Result Card */}
+        {result && (
           <Card className="mt-8 p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             <div className="text-center space-y-6">
               <div>
@@ -420,37 +393,42 @@ export default function CourseExplorer() {
                   🎉 Career Path Unlocked!
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold font-heading mb-3" data-testid="text-combination-name">
-                  🎯 {combination.name}
+                  🎯 {result.title}
                 </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{combination.description}</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Combining {result.techCount} {result.techCount === 1 ? 'technology' : 'technologies'}
+                </p>
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{result.description}</p>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 <Card className="p-6 hover-elevate transition-all">
                   <div className="flex flex-col items-center">
                     <TrendingUp className="h-8 w-8 mb-3 text-primary" />
                     <p className="text-sm text-muted-foreground mb-2">💰 Average Package</p>
-                    <p className="text-2xl font-bold text-primary">{combination.package}</p>
+                    <p className="text-2xl font-bold text-primary" data-testid="text-package-range">
+                      {result.packageRange}
+                    </p>
                   </div>
                 </Card>
                 
-                {combination.vacancies && (
-                  <Card className="p-6 hover-elevate transition-all">
-                    <div className="flex flex-col items-center">
-                      <Briefcase className="h-8 w-8 mb-3 text-secondary" />
-                      <p className="text-sm text-muted-foreground mb-2">📊 Current Vacancies</p>
-                      <p className="text-2xl font-bold text-secondary">{combination.vacancies}</p>
-                    </div>
-                  </Card>
-                )}
+                <Card className="p-6 hover-elevate transition-all">
+                  <div className="flex flex-col items-center">
+                    <Briefcase className="h-8 w-8 mb-3 text-secondary" />
+                    <p className="text-sm text-muted-foreground mb-2">📊 Total Vacancies</p>
+                    <p className="text-2xl font-bold text-secondary" data-testid="text-vacancies">
+                      {result.vacancies.toLocaleString()}+
+                    </p>
+                  </div>
+                </Card>
                 
-                {combination.companies && (
+                {result.companies && result.companies.length > 0 && (
                   <Card className="p-6 hover-elevate transition-all md:col-span-2">
                     <div className="flex flex-col items-center">
                       <Building2 className="h-8 w-8 mb-3 text-primary" />
                       <p className="text-sm text-muted-foreground mb-3">🏢 Top Hiring Companies</p>
                       <div className="flex flex-wrap gap-2 justify-center">
-                        {combination.companies.map((company: string, i: number) => (
+                        {result.companies.map((company: string, i: number) => (
                           <Badge key={i} variant="outline" className="text-sm">
                             {company}
                           </Badge>
@@ -459,23 +437,23 @@ export default function CourseExplorer() {
                     </div>
                   </Card>
                 )}
-              </div>
-
-              {combination.roles && combination.roles.length > 0 && (
-                <Card className="p-6 max-w-3xl mx-auto">
-                  <div className="flex flex-col items-center">
-                    <Users className="h-8 w-8 mb-3 text-secondary" />
-                    <p className="text-sm text-muted-foreground mb-3">👔 Job Roles Available</p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      {combination.roles.map((role: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="text-base px-4 py-2">
-                          {role}
-                        </Badge>
-                      ))}
+                
+                {result.skills && result.skills.length > 0 && (
+                  <Card className="p-6 hover-elevate transition-all md:col-span-2">
+                    <div className="flex flex-col items-center">
+                      <Star className="h-8 w-8 mb-3 text-secondary" />
+                      <p className="text-sm text-muted-foreground mb-3">🎓 Skills & Applications</p>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        {result.skills.map((skill: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-sm px-3 py-1">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              )}
+                  </Card>
+                )}
+              </div>
 
               <div className="mt-8">
                 <Link href="/inquiry">
