@@ -8,11 +8,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-md">
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shadow-sm">
         <div className="container max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center justify-between h-16 md:h-18">
-            <div className="flex items-center py-2">
-              <img src={logoUrl} alt="Programmers Point" className="h-10 md:h-12 px-2 md:px-4" data-testid="img-logo" />
+            <div className="flex items-center">
+              <img src={logoUrl} alt="Programmers Point" className="h-12 md:h-14 py-3 px-6 md:px-8" data-testid="img-logo" />
             </div>
             <div className="hidden md:flex items-center gap-6 lg:gap-8">
               <Link href="/" className="text-foreground hover:text-primary transition-colors" data-testid="link-home">
@@ -53,7 +53,7 @@ export default function Home() {
                 Join India's leading programming institute with 95% placement success rate. 
                 Expert training in React, Java, Python, Node.js, and cutting-edge technologies.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 mt-12">
+              <div className="flex flex-col sm:flex-row gap-4 mt-12 md:mt-16">
                 <Link href="/inquiry" data-testid="button-get-started">
                   <Button size="lg" className="min-h-14 text-base font-semibold tracking-wide">
                     GET STARTED <ArrowRight className="ml-2 h-5 w-5" />
