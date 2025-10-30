@@ -1,0 +1,461 @@
+Hi! I'm migrating my project from another Replit that hit its limit. This is a Progressive Web App for a programming institute with inquiry forms, placement showcase, and interactive course explorer. Here's the complete context and what needs to be fixed:**
+
+---
+
+## 🎯 Project Overview
+
+**App Purpose:**
+- Digital inquiry form for students (saves to database + exports to Google Sheets)
+- Placement showcase with company cards and student details
+- Interactive drag-and-drop course explorer (like Infinite Craft game)
+- Admin panel to manage all data
+
+**Tech Stack:**
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- Drag-Drop: @dnd-kit/core
+- Deployment: Will deploy to Netlify (frontend) + Railway (backend) myself
+
+**Branding:**
+- Institute Name: Programmers Point
+- Colors: Blue (#1E40AF) and Red (#DC2626)
+- Target Device: Android tablet (touch-optimized)
+
+---
+
+## 🗄️ Database Should Already Have
+
+The previous Replit seeded this data (please verify and re-seed if empty):
+
+**1. Companies (12 total):**
+- TCS (15 placements, 4.5 LPA avg)
+- Infosys (12 placements, 5.2 LPA avg)
+- Wipro (8 placements, 4.8 LPA avg)
+- Plus: Accenture, HCL, Tech Mahindra, Capgemini, IBM, Cognizant, Google, Amazon, Microsoft
+
+**2. Student Placements (6 total):**
+- Sachin Kumar @ TCS - 4 LPA, Java Developer
+- Zeeshan Ahmed @ TCS - 10 LPA, Senior Software Engineer
+- Priya Sharma @ Infosys - 5.5 LPA, Python Developer
+- Rahul Verma @ TCS - 4.2 LPA, Frontend Developer
+- Anjali Gupta @ Infosys - 5 LPA, Full Stack Developer
+- Karan Singh @ TCS - 4.5 LPA, Backend Developer
+
+**3. Technologies (31 total) - from this CSV:**
+```csv
+Technology,Vacancies,Avg Package,Top Companies,Last Updated,Used For
+Python,950,6-13 LPA,"Google, Amazon, Microsoft",29-Oct-2025,"Data Science, ML, AI, Automation, Web Dev"
+Java,1200,5-10 LPA,"TCS, Accenture, HCL",29-Oct-2025,"Enterprise Apps, Backend, Android Dev"
+React,850,6-12 LPA,"TCS, Infosys, Wipro",29-Oct-2025,"Web UI, SPAs, Frontend Development"
+JavaScript,1100,5-12 LPA,"Infosys, Cognizant, IBM",29-Oct-2025,"Frontend, Web Apps, Full Stack"
+C++,700,5-12 LPA,"Microsoft, Amazon, Intel",29-Oct-2025,"System Software, Game Dev, Performance Apps"
+C#,650,6-11 LPA,"Microsoft, Capgemini",29-Oct-2025,"Windows Apps, Game Dev, Enterprise"
+SQL,800,4-10 LPA,"TCS, Oracle, HCL",29-Oct-2025,"Database Management, Data Analytics"
+Go,450,6-14 LPA,"Google, Flipkart",29-Oct-2025,"Cloud Infra, System Programming"
+Rust,400,6-15 LPA,"Amazon, Mozilla",29-Oct-2025,"Performance Apps, System Dev"
+Swift,450,7-16 LPA,"Apple, Tech Mahindra",29-Oct-2025,"iOS/macOS App Development"
+TypeScript,500,6-13 LPA,"Microsoft, Infosys",29-Oct-2025,"Scalable Web Apps, Full Stack"
+PHP,600,4-9 LPA,"Wipro, TCS, Siemens",29-Oct-2025,"Web Development, Server-side Scripting"
+Kotlin,420,6-11 LPA,"Google, Infosys",29-Oct-2025,"Android Apps, Backend Dev"
+Scala,350,7-13 LPA,"Infosys, TCS",29-Oct-2025,"Big Data, Functional Programming"
+Ruby,300,5-10 LPA,"Capgemini, ThoughtWorks",29-Oct-2025,"Web Development (Rails)"
+Dart,200,5-9 LPA,"Google, Cognizant",29-Oct-2025,"Mobile Apps (Flutter)"
+Perl,100,4-8 LPA,"IBM, Accenture",29-Oct-2025,"Scripting, System Automation"
+MATLAB,80,7-14 LPA,"MathWorks, HCL",29-Oct-2025,"Simulation, Data Analysis"
+R,120,6-12 LPA,"Google, Amazon",29-Oct-2025,"Data Science, Stats Analysis"
+Solidity,90,8-17 LPA,"Polygon, Tata",29-Oct-2025,"Blockchain Apps, Smart Contracts"
+```
+
+**If database is empty, please run seed script:** `npx tsx server/seed.ts`
+
+---
+
+## 🔴 CRITICAL ISSUE: Drag-and-Drop Not Working Correctly
+
+**The main problem that needs fixing:**
+
+### **Current Broken Behavior:**
+When I drag and drop technologies in the course explorer:
+- ❌ Every combination shows the SAME package range (8-15 LPA)
+- ❌ Every combination shows the SAME vacancies (5000)
+- ❌ Hardcoded data instead of using real database values
+- ❌ Can only select 4 technologies maximum
+
+**Example of the problem:**
+- React + Node.js → Shows "8-15 LPA, 5000 vacancies"
+- Java + Python → Shows "8-15 LPA, 5000 vacancies" (WRONG! Should be different)
+- HTML alone → Shows "8-15 LPA, 5000 vacancies" (WRONG!)
+
+---
+
+### **✅ Required Solution: Dynamic Calculation**
+
+**Instead of hardcoded combinations, calculate from database:**
+
+#### **How It Should Work:**
+
+**Example 1: User selects Java + Python + React**
+
+```javascript
+// Step 1: Look up each technology's data from database
+Java:   { vacancies: 1200, avgPackage: "5-10 LPA", companies: "TCS, Accenture, HCL", usedFor: "Enterprise Apps, Backend, Android Dev" }
+Python: { vacancies: 950,  avgPackage: "6-13 LPA", companies: "Google, Amazon, Microsoft", usedFor: "Data Science, ML, AI, Automation, Web Dev" }
+React:  { vacancies: 850,  avgPackage: "6-12 LPA", companies: "TCS, Infosys, Wipro", usedFor: "Web UI, SPAs, Frontend Development" }
+
+// Step 2: Calculate combined statistics
+Total Vacancies = 1200 + 950 + 850 = 3000
+
+Min Package Average = (5 + 6 + 6) / 3 = 5.67 ≈ 6 LPA
+Max Package Average = (10 + 13 + 12) / 3 = 11.67 ≈ 12 LPA
+Package Range = "6-12 LPA"
+
+Top Companies = Merge unique: ["TCS", "Accenture", "HCL", "Google", "Amazon", "Microsoft", "Infosys", "Wipro"]
+
+Combined Skills = "Enterprise Apps, Backend, Android Dev, Data Science, ML, AI, Web UI, SPAs, Frontend Development"
+
+Stack Title = Generate smart name based on combination
+```
+
+**Step 3: Display result:**
+```
+┌─────────────────────────────────────────────────┐
+│  🎯 Java + Python + React Developer             │
+│  Combining 3 technologies                       │
+│                                                 │
+│  💰 Average Package: 6-12 LPA                   │
+│  📊 Total Vacancies: 3,000+                     │
+│  🏢 Top Companies: TCS, Accenture, HCL, Google, │
+│      Amazon, Microsoft, Infosys, Wipro          │
+│  🎓 Skills: Enterprise Apps, Backend, Data      │
+│      Science, ML, AI, Web UI, Frontend          │
+│                                                 │
+│  [🚀 Learn This Stack]                          │
+└─────────────────────────────────────────────────┘
+```
+
+**Example 2: User selects only Python**
+```
+💰 Package: 6-13 LPA (exact from database)
+📊 Vacancies: 950 (exact from database)
+🏢 Companies: Google, Amazon, Microsoft
+```
+
+---
+
+### **📝 Implementation Requirements:**
+
+**1. Remove Hardcoded Combinations**
+```javascript
+// DELETE THIS (hardcoded approach):
+const stackCombinations = {
+  "React + Node.js + MongoDB": { package: "8-15 LPA", vacancies: 5000 }
+};
+
+// USE THIS (dynamic approach):
+function calculateCombinedStats(selectedTechnologies) {
+  // selectedTechnologies = array of tech objects from database
+  
+  // Calculate total vacancies
+  const totalVacancies = selectedTechnologies.reduce((sum, tech) => {
+    return sum + parseInt(tech.vacancies);
+  }, 0);
+  
+  // Calculate average package range
+  const packageRanges = selectedTechnologies.map(tech => {
+    const [min, max] = tech.avgPackage.match(/\d+/g).map(Number);
+    return { min, max };
+  });
+  
+  const avgMin = Math.round(
+    packageRanges.reduce((sum, p) => sum + p.min, 0) / packageRanges.length
+  );
+  
+  const avgMax = Math.round(
+    packageRanges.reduce((sum, p) => sum + p.max, 0) / packageRanges.length
+  );
+  
+  // Merge unique companies
+  const allCompanies = selectedTechnologies
+    .flatMap(tech => tech.topCompanies.split(', '))
+    .filter((company, index, self) => self.indexOf(company) === index)
+    .slice(0, 8); // Show top 8
+  
+  // Merge skills/use cases
+  const allSkills = selectedTechnologies
+    .flatMap(tech => tech.usedFor.split(', '))
+    .filter((skill, index, self) => self.indexOf(skill) === index);
+  
+  // Generate smart title
+  const title = generateStackTitle(selectedTechnologies);
+  
+  return {
+    title,
+    packageRange: `${avgMin}-${avgMax} LPA`,
+    vacancies: totalVacancies,
+    companies: allCompanies,
+    skills: allSkills,
+    techCount: selectedTechnologies.length
+  };
+}
+
+function generateStackTitle(techs) {
+  const names = techs.map(t => t.name);
+  
+  // Smart naming for common stacks
+  if (names.includes('React') && names.includes('Node.js') && names.includes('MongoDB')) {
+    return 'MERN Stack Developer';
+  }
+  if (names.includes('Java') && names.includes('Spring Boot') && names.includes('MySQL')) {
+    return 'Java Full Stack Developer';
+  }
+  if (names.includes('Python') && names.includes('Django')) {
+    return 'Python Full Stack Developer';
+  }
+  
+  // Generic titles
+  if (techs.length === 1) {
+    return `${names[0]} Developer`;
+  }
+  if (techs.length === 2) {
+    return `${names[0]} + ${names[1]} Developer`;
+  }
+  if (techs.length === 3) {
+    return `${names[0]}, ${names[1]} & ${names[2]} Developer`;
+  }
+  return `Multi-Stack Developer (${techs.length} technologies)`;
+}
+```
+
+**2. Remove 4-Technology Selection Limit**
+- Allow selecting unlimited technologies (5, 6, 10, whatever)
+- Show selected techs as removable chips/badges
+- Update calculations in real-time when adding/removing
+
+**3. UI Requirements:**
+```jsx
+// Show selected technologies
+<div className="selected-technologies">
+  {selectedTechs.map(tech => (
+    <span className="tech-chip">
+      {tech.name}
+      <button onClick={() => removeTech(tech)}>✕</button>
+    </span>
+  ))}
+</div>
+
+// Show result card (only when 1+ techs selected)
+{selectedTechs.length > 0 && (
+  <div className="result-card">
+    <h2>🎯 {result.title}</h2>
+    <p className="text-sm text-gray-600">
+      Combining {result.techCount} {result.techCount === 1 ? 'technology' : 'technologies'}
+    </p>
+    
+    <div className="stats-grid">
+      <div className="stat">
+        <span className="icon">💰</span>
+        <span className="label">Average Package:</span>
+        <span className="value">{result.packageRange}</span>
+      </div>
+      
+      <div className="stat">
+        <span className="icon">📊</span>
+        <span className="label">Total Vacancies:</span>
+        <span className="value">{result.vacancies.toLocaleString()}+</span>
+      </div>
+      
+      <div className="stat">
+        <span className="icon">🏢</span>
+        <span className="label">Top Hiring Companies:</span>
+        <div className="companies-list">
+          {result.companies.map(company => (
+            <span className="company-badge">{company}</span>
+          ))}
+        </div>
+      </div>
+      
+      <div className="stat">
+        <span className="icon">🎓</span>
+        <span className="label">Skills & Applications:</span>
+        <div className="skills-list">
+          {result.skills.map(skill => (
+            <span className="skill-badge">{skill}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+    
+    <button className="learn-button">🚀 Learn This Stack</button>
+  </div>
+)}
+```
+
+---
+
+### **🧪 Test Cases to Verify:**
+
+After implementation, these should show DIFFERENT numbers:
+
+| Selection | Expected Package | Expected Vacancies | Expected Companies |
+|-----------|------------------|-------------------|-------------------|
+| Java only | 5-10 LPA | 1,200 | TCS, Accenture, HCL |
+| Python only | 6-13 LPA | 950 | Google, Amazon, Microsoft |
+| React only | 6-12 LPA | 850 | TCS, Infosys, Wipro |
+| Java + Python | ~6-12 LPA | 2,150 | Merged (6 companies) |
+| React + Node.js + MongoDB | Calculated | 2,600+ | Merged companies |
+| All 5 (Python, Java, React, JavaScript, Node.js) | Calculated avg | 5,000+ | All merged |
+
+**Each combination MUST show different numbers based on actual database values!**
+
+---
+
+## 🎨 Other Issues to Fix
+
+### **1. Header Spacing**
+- Add 20-30px padding around logo
+- Logo shouldn't touch the edge
+- Header height: 64-72px
+- Add subtle shadow: `shadow-sm`
+
+### **2. "Start Your Journey" Button**
+- Add more top margin: `mt-12` (48px)
+- Ensure proper spacing on mobile/tablet
+
+### **3. Admin Panel Features Needed**
+All these should be working (verify after migration):
+- ✅ Add Company button with form (name, logo URL, avg package)
+- ✅ Add Student Placement button (name, company dropdown, package, phone, profile, course, review, photo)
+- ✅ CSV Import feature (for bulk technology data)
+- ✅ Google Sheets connection status indicator
+- ✅ Edit/Delete for companies and placements
+
+**Admin Login:**
+- Username: `admin`
+- Password: `admin123`
+
+---
+
+## 📱 Tablet Optimization Requirements
+
+**Touch Interactions:**
+- All drag-and-drop must work with finger touch (not just mouse)
+- Buttons minimum 48px height
+- Disable text selection during drag
+- Use @dnd-kit/core with touch events
+
+**Responsive:**
+- Works on 7" to 12" tablets
+- Portrait and landscape modes
+- No horizontal scrolling
+
+**PWA Features:**
+- Installable ("Add to Home Screen")
+- Offline capability
+- Fast loading (<3 seconds)
+
+---
+
+## 🔗 Google Sheets Integration
+
+**What it should do:**
+- When student fills inquiry form → Save to PostgreSQL + Export to Google Sheets
+- Sheet email: `zeeexshanxkhan@gmail.com`
+- Two sheets: "All Inquiries" and "Not Joined" (for follow-up calls)
+
+**Status indicator in admin panel:**
+- Show "✅ Connected" or "❌ Not Connected"
+- Manual "Sync Now" button
+
+---
+
+## 📤 Deployment Preparation
+
+**I will deploy myself, so please ensure:**
+- Clear separation of frontend and backend code
+- `.env.example` file with all required variables
+- `README.md` with deployment instructions
+- Database migration/seed scripts
+- Google Sheets API setup guide
+
+**Environment variables needed:**
+```
+# Backend
+DATABASE_URL=postgresql://...
+GOOGLE_SHEETS_ID=...
+GOOGLE_SERVICE_ACCOUNT_EMAIL=...
+GOOGLE_PRIVATE_KEY=...
+ADMIN_PASSWORD=...
+
+# Frontend
+VITE_API_URL=https://backend-url.railway.app
+```
+
+---
+
+## ⏰ Priority Order
+
+**URGENT (Do First):**
+1. ✅ Verify database has all seeded data (or re-run seed)
+2. ✅ Fix drag-and-drop to use dynamic calculation (NOT hardcoded)
+3. ✅ Remove 4-technology selection limit
+4. ✅ Fix header spacing issues
+
+**IMPORTANT (Do Second):**
+5. ✅ Verify admin panel buttons work (Add Company, Add Placement)
+6. ✅ Test Google Sheets connection
+7. ✅ Verify CSV import feature
+
+**NICE TO HAVE:**
+8. Real-time calculation updates as user selects/deselects
+9. Animation when result card appears
+10. "Commonly Paired With" suggestions
+
+---
+
+## 📊 Expected Final Behavior
+
+**When I open the app on tablet:**
+1. See beautiful header with proper spacing ✅
+2. Fill inquiry form → Data saves + exports to Google Sheets ✅
+3. Browse placements → Click TCS → See 6 students ✅
+4. Go to course explorer:
+   - Drag "React" → See "React Developer, 6-12 LPA, 850 vacancies"
+   - Add "Node.js" → Updates to "React + Node.js, 6-12 LPA, 1800 vacancies"
+   - Add "MongoDB" → Updates to "MERN Stack, 6-12 LPA, 2600 vacancies"
+   - Add "Python" → Updates to "Multi-Stack, 6-12 LPA, 3550 vacancies"
+   - Each addition shows DIFFERENT calculated numbers ✅
+
+**Admin Panel:**
+- Login with admin/admin123 ✅
+- Add new company with logo ✅
+- Add new student placement with details ✅
+- Import CSV to bulk-update technology data ✅
+- See Google Sheets connection status ✅
+
+---
+
+## 🚨 What NOT to Do
+
+- ❌ Don't use hardcoded combinations like previous version
+- ❌ Don't limit selection to 4 technologies
+- ❌ Don't show same package/vacancies for all combinations
+- ❌ Don't use Puppeteer for web scraping (too heavy for Replit)
+- ❌ Don't deploy on Replit (I'll deploy to Netlify + Railway myself)
+
+---
+
+## 📝 Summary
+
+**Main Issue:** Drag-and-drop showing identical data for all combinations instead of calculating from real database values.
+
+**Required:** Dynamic calculation that sums vacancies, averages packages, and merges companies from selected technologies.
+
+**Timeline?** How long will the drag-and-drop fix take?
+
+Please start by:
+1. Checking if database has data (run seed if empty)
+2. Fixing the dynamic calculation logic
+3. Testing with multiple combinations to verify different results
+
+**Let me know when you've started and if you need any clarification!**"
