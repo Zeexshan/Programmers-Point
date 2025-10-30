@@ -53,7 +53,7 @@ export default function Home() {
                 Join India's leading programming institute with 95% placement success rate. 
                 Expert training in React, Java, Python, Node.js, and cutting-edge technologies.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 mt-12">
                 <Link href="/inquiry" data-testid="button-get-started">
                   <Button size="lg" className="min-h-14 text-base font-semibold tracking-wide">
                     GET STARTED <ArrowRight className="ml-2 h-5 w-5" />
