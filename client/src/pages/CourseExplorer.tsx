@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DndContext, DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { ArrowLeft, X, Briefcase, TrendingUp, Building2, Star, Calendar, Users } from "lucide-react";
+import { ArrowLeft, X, Briefcase, TrendingUp, Building2, Star, Calendar, Users, Target, Sparkles } from "lucide-react";
 import { SiReact, SiJavascript, SiAngular, SiPython, SiNodedotjs, SiDjango, SiSpring, SiMysql, SiMongodb, SiPostgresql, SiHtml5, SiCss3, SiKotlin, SiR, SiGo } from "react-icons/si";
 import { Coffee, Smartphone } from "lucide-react";
 import confetti from "canvas-confetti";
 import logoUrl from "@assets/logo_1761740236721.png";
-import type { Technology } from "@shared/schema";
+import type { Technology, TechnologyCombination } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 // Tech icon mapping
 const techIcons: Record<string, any> = {
@@ -243,9 +244,27 @@ function DropZone({ selectedTechs, onRemove }: { selectedTechs: Technology[], on
   );
 }
 
+type MatchType = 'exact' | 'subset' | 'calculated' | null;
+
+interface CombinedResult {
+  title: string;
+  packageRange: string;
+  fresherPackage?: string;
+  experiencedPackage?: string;
+  vacancies: number;
+  companies: string[];
+  skills: string[];
+  techCount: number;
+  description: string;
+  matchType: MatchType;
+  popularityScore?: number;
+  commonality?: string;
+}
+
 export default function CourseExplorer() {
   const [selectedTechs, setSelectedTechs] = useState<Technology[]>([]);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<CombinedResult | null>(null);
+  const [isMatching, setIsMatching] = useState(false);
 
   const { data: technologies, isLoading } = useQuery<Technology[]>({
     queryKey: ["/api/technologies"],
@@ -301,9 +320,70 @@ export default function CourseExplorer() {
     }
   };
 
-  const updateResult = (techs: Technology[]) => {
-    const calculatedResult = calculateCombinedStats(techs);
-    setResult(calculatedResult);
+  const updateResult = async (techs: Technology[]) => {
+    if (techs.length === 0) {
+      setResult(null);
+      return;
+    }
+
+    setIsMatching(true);
+    
+    try {
+      // Call the match API with selected technology names
+      const selectedNames = techs.map(t => t.name);
+      const matches = await apiRequest<TechnologyCombination[]>({
+        url: "/api/technology-combinations/match",
+        method: "POST",
+        body: { selectedTechnologies: selectedNames },
+      });
+
+      if (matches && matches.length > 0) {
+        const bestMatch = matches[0];
+        
+        // Determine match type
+        const isExact = bestMatch.technologies.length === selectedNames.length;
+        const matchType: MatchType = isExact ? 'exact' : 'subset';
+        
+        // Convert match to result format
+        const matchResult: CombinedResult = {
+          title: bestMatch.jobRole,
+          packageRange: `${bestMatch.fresherPackage} (Fresher) | ${bestMatch.experiencedPackage} (Exp.)`,
+          fresherPackage: bestMatch.fresherPackage,
+          experiencedPackage: bestMatch.experiencedPackage,
+          vacancies: bestMatch.vacancies,
+          companies: bestMatch.topCompanies,
+          skills: [], // We don't have skills in combinations yet
+          techCount: techs.length,
+          description: `${bestMatch.category} • ${bestMatch.commonality}`,
+          matchType,
+          popularityScore: bestMatch.popularityScore,
+          commonality: bestMatch.commonality,
+        };
+        
+        setResult(matchResult);
+      } else {
+        // No matches found - fall back to calculated result
+        const calculatedResult = calculateCombinedStats(techs);
+        if (calculatedResult) {
+          setResult({
+            ...calculatedResult,
+            matchType: 'calculated'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error matching technologies:', error);
+      // Fall back to calculated result on error
+      const calculatedResult = calculateCombinedStats(techs);
+      if (calculatedResult) {
+        setResult({
+          ...calculatedResult,
+          matchType: 'calculated'
+        });
+      }
+    } finally {
+      setIsMatching(false);
+    }
   };
 
   const removeTech = (id: string) => {
@@ -386,14 +466,48 @@ export default function CourseExplorer() {
 
         {/* Dynamic Result Card */}
         {result && (
-          <Card className="mt-8 p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+          <Card className={`mt-8 p-8 border-2 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 ${
+            result.matchType === 'exact' 
+              ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-500/50'
+              : result.matchType === 'subset'
+              ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-500/50'
+              : 'bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20'
+          }`}>
             <div className="text-center space-y-6">
               <div>
-                <Badge variant="default" className="text-lg px-4 py-2 mb-4">
-                  🎉 Career Path Unlocked!
-                </Badge>
+                {result.matchType === 'exact' && (
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Badge variant="default" className="text-lg px-4 py-2 bg-green-600 hover:bg-green-700">
+                      <Target className="h-4 w-4 mr-2" />
+                      🎯 Perfect Match!
+                    </Badge>
+                    {result.popularityScore && (
+                      <Badge variant="secondary" className="text-sm px-3 py-2">
+                        ⭐ Popularity: {result.popularityScore}/10
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                {result.matchType === 'subset' && (
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Badge variant="default" className="text-lg px-4 py-2 bg-blue-600 hover:bg-blue-700">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      ✨ Best Match
+                    </Badge>
+                    {result.popularityScore && (
+                      <Badge variant="secondary" className="text-sm px-3 py-2">
+                        ⭐ Popularity: {result.popularityScore}/10
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                {result.matchType === 'calculated' && (
+                  <Badge variant="default" className="text-lg px-4 py-2 mb-4">
+                    🔄 Custom Combination
+                  </Badge>
+                )}
                 <h2 className="text-3xl md:text-4xl font-bold font-heading mb-3" data-testid="text-combination-name">
-                  🎯 {result.title}
+                  {result.matchType === 'exact' ? '🎯 ' : result.matchType === 'subset' ? '✨ ' : '🎓 '}{result.title}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-2">
                   Combining {result.techCount} {result.techCount === 1 ? 'technology' : 'technologies'}
