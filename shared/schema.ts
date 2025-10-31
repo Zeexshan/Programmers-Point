@@ -67,6 +67,22 @@ export const technologies = pgTable("technologies", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Technology Combinations Table
+export const technologyCombinations = pgTable("technology_combinations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  technologies: text("technologies").array().notNull(), // Array of technology names
+  category: text("category").notNull(), // "Frontend", "Backend", "Full Stack", etc.
+  jobRole: text("job_role").notNull(),
+  techCount: integer("tech_count").notNull(),
+  commonality: text("commonality").notNull(), // "Common", "Moderate", "Rare"
+  vacancies: integer("vacancies").notNull(),
+  fresherPackage: text("fresher_package").notNull(),
+  experiencedPackage: text("experienced_package").notNull(),
+  topCompanies: text("top_companies").array().notNull(), // Array of company names
+  popularityScore: integer("popularity_score").notNull(), // 1-10
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // System Logs Table
 export const systemLogs = pgTable("system_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -109,6 +125,11 @@ export const insertTechnologySchema = createInsertSchema(technologies).omit({
   updatedAt: true,
 });
 
+export const insertTechnologyCombinationSchema = createInsertSchema(technologyCombinations).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
@@ -124,5 +145,8 @@ export type InsertPlacement = z.infer<typeof insertPlacementSchema>;
 
 export type Technology = typeof technologies.$inferSelect;
 export type InsertTechnology = z.infer<typeof insertTechnologySchema>;
+
+export type TechnologyCombination = typeof technologyCombinations.$inferSelect;
+export type InsertTechnologyCombination = z.infer<typeof insertTechnologyCombinationSchema>;
 
 export type SystemLog = typeof systemLogs.$inferSelect;
