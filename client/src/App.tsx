@@ -12,6 +12,7 @@ import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminInquiries from "@/pages/admin/Inquiries";
 import AdminPlacements from "@/pages/admin/Placements";
 import AdminCompanies from "@/pages/admin/Companies";
+import AdminTechnologyCombinations from "@/pages/admin/TechnologyCombinations";
 import AdminDataImport from "@/pages/admin/DataImport";
 import AdminSettings from "@/pages/admin/Settings";
 
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/admin/inquiries" component={AdminInquiries} />
       <Route path="/admin/placements" component={AdminPlacements} />
       <Route path="/admin/companies" component={AdminCompanies} />
+      <Route path="/admin/combinations" component={AdminTechnologyCombinations} />
       <Route path="/admin/import" component={AdminDataImport} />
       <Route path="/admin/settings" component={AdminSettings} />
       

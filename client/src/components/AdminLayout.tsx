@@ -5,6 +5,7 @@ import {
   Users,
   Briefcase,
   Building2,
+  Layers,
   Upload,
   Settings,
   LogOut,
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/admin/inquiries", icon: Users, label: "Inquiries" },
   { href: "/admin/placements", icon: Briefcase, label: "Placements" },
   { href: "/admin/companies", icon: Building2, label: "Companies" },
+  { href: "/admin/combinations", icon: Layers, label: "Tech Combinations" },
   { href: "/admin/import", icon: Upload, label: "Data Import" },
   { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];
