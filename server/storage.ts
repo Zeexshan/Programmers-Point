@@ -4,6 +4,7 @@ import {
   companies,
   placements,
   technologies,
+  technologyCombinations,
   systemLogs,
   type AdminUser,
   type InsertAdminUser,
@@ -15,10 +16,12 @@ import {
   type InsertPlacement,
   type Technology,
   type InsertTechnology,
+  type TechnologyCombination,
+  type InsertTechnologyCombination,
   type SystemLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, arrayContains, and } from "drizzle-orm";
 
 export interface IStorage {
   // Admin Users
@@ -53,6 +56,14 @@ export interface IStorage {
   getTechnology(id: string): Promise<Technology | undefined>;
   upsertTechnology(technology: InsertTechnology): Promise<Technology>;
   updateTechnologies(technologies: InsertTechnology[]): Promise<void>;
+
+  // Technology Combinations
+  getAllTechnologyCombinations(): Promise<TechnologyCombination[]>;
+  getTechnologyCombination(id: string): Promise<TechnologyCombination | undefined>;
+  createTechnologyCombination(combination: InsertTechnologyCombination): Promise<TechnologyCombination>;
+  updateTechnologyCombination(id: string, data: Partial<InsertTechnologyCombination>): Promise<TechnologyCombination>;
+  deleteTechnologyCombination(id: string): Promise<void>;
+  findMatchingCombinations(selectedTechs: string[]): Promise<TechnologyCombination[]>;
 
   // System Logs
   createLog(action: string, details?: string): Promise<SystemLog>;
@@ -217,6 +228,81 @@ export class DatabaseStorage implements IStorage {
     for (const tech of techs) {
       await this.upsertTechnology(tech);
     }
+  }
+
+  // Technology Combinations
+  async getAllTechnologyCombinations(): Promise<TechnologyCombination[]> {
+    return await db.select().from(technologyCombinations).orderBy(desc(technologyCombinations.popularityScore), desc(technologyCombinations.vacancies));
+  }
+
+  async getTechnologyCombination(id: string): Promise<TechnologyCombination | undefined> {
+    const [combination] = await db.select().from(technologyCombinations).where(eq(technologyCombinations.id, id));
+    return combination || undefined;
+  }
+
+  async createTechnologyCombination(combination: InsertTechnologyCombination): Promise<TechnologyCombination> {
+    const [created] = await db
+      .insert(technologyCombinations)
+      .values(combination)
+      .returning();
+    return created;
+  }
+
+  async updateTechnologyCombination(id: string, data: Partial<InsertTechnologyCombination>): Promise<TechnologyCombination> {
+    const [updated] = await db
+      .update(technologyCombinations)
+      .set(data)
+      .where(eq(technologyCombinations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTechnologyCombination(id: string): Promise<void> {
+    await db.delete(technologyCombinations).where(eq(technologyCombinations.id, id));
+  }
+
+  async findMatchingCombinations(selectedTechs: string[]): Promise<TechnologyCombination[]> {
+    // Get all combinations from database
+    const allCombinations = await db.select().from(technologyCombinations);
+    
+    // Filter to find exact and subset matches
+    const matches = allCombinations.filter(combo => {
+      const comboTechs = combo.technologies;
+      
+      // Check if all selected techs are in this combination
+      const allSelectedInCombo = selectedTechs.every(tech => 
+        comboTechs.some(comboTech => 
+          comboTech.toLowerCase().trim() === tech.toLowerCase().trim()
+        )
+      );
+      
+      // Check if all combo techs are in selected (exact match)
+      const allComboInSelected = comboTechs.every(comboTech => 
+        selectedTechs.some(tech => 
+          tech.toLowerCase().trim() === comboTech.toLowerCase().trim()
+        )
+      );
+      
+      // Return true if it's an exact match or if all selected techs are in combo
+      return allSelectedInCombo;
+    });
+    
+    // Sort by: exact matches first (same length), then by popularity, then by vacancies
+    matches.sort((a, b) => {
+      const aIsExact = a.technologies.length === selectedTechs.length;
+      const bIsExact = b.technologies.length === selectedTechs.length;
+      
+      if (aIsExact && !bIsExact) return -1;
+      if (!aIsExact && bIsExact) return 1;
+      
+      if (b.popularityScore !== a.popularityScore) {
+        return b.popularityScore - a.popularityScore;
+      }
+      
+      return b.vacancies - a.vacancies;
+    });
+    
+    return matches;
   }
 
   // System Logs

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInquirySchema, insertCompanySchema, insertPlacementSchema } from "@shared/schema";
+import { insertInquirySchema, insertCompanySchema, insertPlacementSchema, insertTechnologyCombinationSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
@@ -235,6 +235,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createLog("technologies_updated", `Updated ${technologies.length} technologies`);
       
       res.json({ success: true, count: technologies.length });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== TECHNOLOGY COMBINATIONS ==========
+  
+  // Get all technology combinations
+  app.get("/api/technology-combinations", async (req, res) => {
+    try {
+      const combinations = await storage.getAllTechnologyCombinations();
+      res.json(combinations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Match selected technologies to combinations
+  app.post("/api/technology-combinations/match", async (req, res) => {
+    try {
+      const { selectedTechnologies } = req.body;
+      
+      if (!Array.isArray(selectedTechnologies) || selectedTechnologies.length === 0) {
+        return res.status(400).json({ error: "selectedTechnologies must be a non-empty array" });
+      }
+      
+      const matches = await storage.findMatchingCombinations(selectedTechnologies);
+      res.json(matches);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create technology combination
+  app.post("/api/technology-combinations", async (req, res) => {
+    try {
+      const validated = insertTechnologyCombinationSchema.parse(req.body);
+      const combination = await storage.createTechnologyCombination(validated);
+      await storage.createLog("combination_created", `Combination ${combination.jobRole} added`);
+      res.json(combination);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  // Update technology combination
+  app.patch("/api/technology-combinations/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const combination = await storage.updateTechnologyCombination(id, req.body);
+      await storage.createLog("combination_updated", `Combination ${combination.jobRole} updated`);
+      res.json(combination);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete technology combination
+  app.delete("/api/technology-combinations/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteTechnologyCombination(id);
+      await storage.createLog("combination_deleted", "Combination deleted");
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
