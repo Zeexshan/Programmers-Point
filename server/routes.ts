@@ -396,6 +396,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CSV Import for technology combinations
+  app.post("/api/import/combinations-csv", async (req, res) => {
+    try {
+      const { csvText } = req.body;
+      
+      if (!csvText) {
+        return res.status(400).json({ error: "CSV text is required" });
+      }
+      
+      // Helper function to parse CSV line with quote handling
+      function parseCSVLine(line: string): string[] {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        
+        result.push(current.trim());
+        return result;
+      }
+      
+      // Helper to determine category based on technologies
+      function determineCategory(technologies: string[]): string {
+        const techNames = technologies.map(t => t.toLowerCase());
+        
+        if (techNames.some(t => t.includes('react') || t.includes('angular') || t.includes('html') || t.includes('css') || t.includes('frontend'))) {
+          if (techNames.some(t => t.includes('node') || t.includes('express') || t.includes('django') || t.includes('spring') || t.includes('java') || t.includes('python'))) {
+            return 'Full Stack';
+          }
+          return 'Frontend';
+        }
+        
+        if (techNames.some(t => t.includes('java') || t.includes('spring') || t.includes('node') || t.includes('express') || t.includes('django') || t.includes('php') || t.includes('python'))) {
+          return 'Backend';
+        }
+        
+        if (techNames.some(t => t.includes('mysql') || t.includes('mongodb') || t.includes('oracle') || t.includes('database') || t.includes('sql'))) {
+          return 'Database';
+        }
+        
+        return 'Other';
+      }
+      
+      // Helper to determine commonality based on vacancies
+      function determineCommonality(vacancies: number): string {
+        if (vacancies >= 5000) return 'Common';
+        if (vacancies >= 2000) return 'Moderate';
+        return 'Rare';
+      }
+      
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        return res.status(400).json({ error: "CSV must have header and at least one data row" });
+      }
+      
+      const combinations = [];
+      
+      // Clear existing combinations first
+      await storage.deleteAllTechnologyCombinations();
+      
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const values = parseCSVLine(lines[i]);
+          
+          if (values.length >= 7) {
+            // Parse technologies from the combination string
+            const techComboStr = values[0].replace(/"/g, '');
+            const technologies = techComboStr.split('+').map(t => t.trim()).filter(t => t.length > 0);
+            
+            // Parse companies from comma-separated string
+            const companiesStr = values[5].replace(/"/g, '');
+            const companies = companiesStr.split(',').map(c => c.trim());
+            
+            const vacancies = parseInt(values[2]);
+            const category = determineCategory(technologies);
+            const commonality = determineCommonality(vacancies);
+            
+            combinations.push({
+              technologies,
+              category,
+              jobRole: values[1].replace(/"/g, ''),
+              techCount: technologies.length,
+              commonality,
+              vacancies,
+              fresherPackage: values[3].replace(/"/g, ''),
+              experiencedPackage: values[4].replace(/"/g, ''),
+              topCompanies: companies,
+              popularityScore: parseInt(values[6]),
+            });
+          }
+        } catch (error) {
+          console.error(`Error parsing line ${i}:`, error);
+        }
+      }
+      
+      // Bulk insert all combinations
+      for (const combination of combinations) {
+        await storage.createTechnologyCombination(combination);
+      }
+      
+      await storage.createLog("combinations_csv_import", `Imported ${combinations.length} technology combinations from CSV`);
+      
+      res.json({ success: true, count: combinations.length });
+    } catch (error: any) {
+      console.error("Combinations CSV import error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Google Sheets Connection Status
   app.get("/api/google-sheets/status", async (req, res) => {
     try {

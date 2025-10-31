@@ -11,7 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDataImport() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [combinationsCsvFile, setCombinationsCsvFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const combinationsFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: sheetsStatus } = useQuery<{ connected: boolean; message: string }>({
@@ -44,15 +46,53 @@ export default function AdminDataImport() {
     }
   });
 
+  const importCombinationsCsvMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const csvText = await file.text();
+      
+      return await apiRequest("POST", "/api/import/combinations-csv", { csvText });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/technology-combinations"] });
+      toast({ 
+        title: "Success", 
+        description: `Imported ${data.count || 0} technology combinations from CSV` 
+      });
+      setCombinationsCsvFile(null);
+      if (combinationsFileInputRef.current) {
+        combinationsFileInputRef.current.value = "";
+      }
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to import combinations CSV",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setCsvFile(e.target.files[0]);
     }
   };
 
+  const handleCombinationsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCombinationsCsvFile(e.target.files[0]);
+    }
+  };
+
   const handleImportCsv = () => {
     if (csvFile) {
       importCsvMutation.mutate(csvFile);
+    }
+  };
+
+  const handleImportCombinationsCsv = () => {
+    if (combinationsCsvFile) {
+      importCombinationsCsvMutation.mutate(combinationsCsvFile);
     }
   };
 
@@ -103,6 +143,46 @@ export default function AdminDataImport() {
             </div>
           </Card>
 
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold font-heading mb-4">Import Job Market Data (Combinations)</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Upload CSV with: Technology Combination, Job Role, Vacancies, Fresher Package, Experienced Package, Top Companies, Popularity Score
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="combinations-csv-file">Select CSV File</Label>
+                <Input
+                  id="combinations-csv-file"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCombinationsFileChange}
+                  ref={combinationsFileInputRef}
+                  className="h-12 cursor-pointer"
+                  data-testid="input-combinations-csv-file"
+                />
+                {combinationsCsvFile && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Selected: {combinationsCsvFile.name}
+                  </p>
+                )}
+              </div>
+              <Button 
+                className="w-full h-12" 
+                disabled={!combinationsCsvFile || importCombinationsCsvMutation.isPending}
+                onClick={handleImportCombinationsCsv}
+                data-testid="button-import-combinations-csv"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {importCombinationsCsvMutation.isPending ? "Importing..." : "Import Combinations"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                This will replace all existing combination data with the new CSV data
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
           <Card className="p-6">
             <h3 className="text-xl font-semibold font-heading mb-4">Google Sheets Connection</h3>
             <div className="mb-6">

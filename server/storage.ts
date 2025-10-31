@@ -63,6 +63,7 @@ export interface IStorage {
   createTechnologyCombination(combination: InsertTechnologyCombination): Promise<TechnologyCombination>;
   updateTechnologyCombination(id: string, data: Partial<InsertTechnologyCombination>): Promise<TechnologyCombination>;
   deleteTechnologyCombination(id: string): Promise<void>;
+  deleteAllTechnologyCombinations(): Promise<void>;
   findMatchingCombinations(selectedTechs: string[]): Promise<TechnologyCombination[]>;
 
   // System Logs
@@ -259,6 +260,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTechnologyCombination(id: string): Promise<void> {
     await db.delete(technologyCombinations).where(eq(technologyCombinations.id, id));
+  }
+
+  async deleteAllTechnologyCombinations(): Promise<void> {
+    await db.delete(technologyCombinations);
   }
 
   async findMatchingCombinations(selectedTechs: string[]): Promise<TechnologyCombination[]> {
