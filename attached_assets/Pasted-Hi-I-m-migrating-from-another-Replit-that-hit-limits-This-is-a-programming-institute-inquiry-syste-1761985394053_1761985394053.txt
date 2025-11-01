@@ -1,0 +1,204 @@
+Hi! I'm migrating from another Replit that hit limits. This is a programming institute inquiry system with course explorer. Here's what needs to be fixed:
+
+🔴 CRITICAL ISSUES:
+1. Database is Empty After Migration
+Please create and run a seed script to populate:
+
+Companies (12 total with logos)
+Student placements (6 samples)
+Technologies (only the ones we teach - see list below)
+Technology combinations (only valid combinations)
+
+Seed script command: npx tsx server/seed.ts
+
+2. Showing Wrong Technologies - FILTER IMMEDIATELY
+PROBLEM: App is showing technologies we DON'T teach (Go, Rust, Scala, Elixir, Swift, Kotlin, etc.)
+WE ONLY TEACH THESE:
+Frontend Technologies:
+
+HTML5
+CSS3
+JavaScript (Basic)
+JavaScript Advance
+jQuery
+Bootstrap
+ES6
+React.js
+TypeScript
+Angular JS
+
+Backend Technologies:
+
+Python Core
+Python Advance
+Python OOPS
+Django ORM
+Django MVC
+Django Rest Framework
+Java Core (J2SE)
+Java Advance (J2EE, JDBC, Servlet, JSP, MVC)
+Spring Core
+Spring JDBC + ORM
+Spring MVC
+Spring Boot
+Spring Security
+Hibernate ORM
+Microservices
+REST API
+Maven
+Node.js
+Express.js
+
+Database:
+
+MySQL
+MongoDB
+Oracle SQL
+
+Other:
+
+PHP Core
+PHP Advance
+PHP OOPS
+Laravel
+Code Igniter
+WordPress
+C Programming
+C++ with OOPS
+DSA (Data Structures & Algorithms)
+MERN Stack (as combination)
+Front End Presentation
+
+REQUIRED ACTION:
+
+Delete ALL technologies not in the above list from database
+Only show these technologies in course explorer
+Remove all combinations that use technologies we don't teach (no Go, Rust, Scala, Flutter, Swift, Kotlin, etc.)
+
+
+3. Wrong Package Data - Need Manual Edit Feature
+PROBLEM: Technologies showing incorrect packages (HTML showing "3-6 LPA" when it should be less)
+SOLUTION NEEDED:
+Add "Edit Technology" button in Admin Panel with these fields:
+
+Technology Name
+Category (Frontend/Backend/Database/Other)
+Vacancies (editable number)
+Fresher Package (text input: "2-4 LPA")
+Experienced Package (text input: "4-8 LPA")
+Top Companies (comma-separated)
+Used For (description)
+Last Updated (auto-set to today)
+
+UI for Admin Panel:
+┌─────────────────────────────────────────────────┐
+│  Manage Technologies                            │
+│                                                 │
+│  [➕ Add Technology]  [📤 Import CSV]           │
+│                                                 │
+│  Search: [___________________________] 🔍       │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │ HTML5                                     │ │
+│  │ Frontend | 8000 vacancies                │ │
+│  │ 3-6 LPA → 6-13 LPA                       │ │
+│  │ [✏️ Edit] [🗑️ Delete]                     │ │
+│  └───────────────────────────────────────────┘ │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │ React.js                                  │ │
+│  │ Frontend | 6000 vacancies                │ │
+│  │ 4-7 LPA → 7-16 LPA                       │ │
+│  │ [✏️ Edit] [🗑️ Delete]                     │ │
+│  └───────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────┘
+```
+
+**When clicking "Edit":**
+- Show modal/form with all fields pre-filled
+- Allow editing vacancies, packages, companies
+- Save button updates database
+- Show success message
+
+---
+
+### **4. Add Edit Button for Technology Combinations**
+
+**Admin Panel should have "Manage Combinations" section:**
+```
+┌─────────────────────────────────────────────────┐
+│  Technology Combinations (45)                   │
+│                                                 │
+│  [➕ Add Combination]  [📤 Import CSV]          │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │ HTML5 + CSS3 + JavaScript                 │ │
+│  │ Frontend Developer                        │ │
+│  │ 13000 vacancies | 3-6 LPA (Fresher)      │ │
+│  │ [✏️ Edit] [🗑️ Delete]                      │ │
+│  └───────────────────────────────────────────┘ │
+│                                                 │
+│  ┌───────────────────────────────────────────┐ │
+│  │ React.js + Node.js + MongoDB              │ │
+│  │ MERN Stack Developer                      │ │
+│  │ 2500 vacancies | 4-8 LPA (Fresher)       │ │
+│  │ [✏️ Edit] [🗑️ Delete]                      │ │
+│  └───────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────┘
+Edit form should have:
+
+Technologies (multi-select dropdown - only our technologies)
+Job Role Name (text input)
+Vacancies (number input)
+Fresher Package (text: "4-8 LPA")
+Experienced Package (text: "8-16 LPA")
+Top Companies (text: comma-separated)
+Popularity Score (1-10 slider)
+Category (dropdown: Frontend/Backend/Full Stack/Mobile/Data Science)
+
+
+5. Correct Technology & Combination Data
+Please populate with ONLY these combinations:
+Individual Technologies (that we teach):
+csvTechnology,Category,Vacancies,Fresher Package,Experienced Package,Top Companies,Popularity Score
+HTML5,Frontend,8000,"2-4 LPA","4-8 LPA","TCS, Infosys, Wipro, Capgemini",7
+CSS3,Frontend,8000,"2-4 LPA","4-8 LPA","TCS, Infosys, Wipro, Capgemini",7
+JavaScript,Frontend,9000,"3-6 LPA","7-14 LPA","Infosys, Wipro, Cognizant, IBM",10
+jQuery,Frontend,3000,"3-5 LPA","6-10 LPA","Infosys, Capgemini",6
+Bootstrap,Frontend,3500,"3-5 LPA","6-11 LPA","Infosys, Capgemini, Wipro",7
+React.js,Frontend,6000,"4-7 LPA","7-16 LPA","Flipkart, Swiggy, Ola, PayTM",9
+Angular JS,Frontend,4500,"4-7 LPA","7-15 LPA","HCL, TCS, Capgemini, Wipro",8
+TypeScript,Frontend,3200,"4-7 LPA","7-15 LPA","Microsoft, Infosys, Cognizant",7
+Python Core,Backend,9000,"3-6 LPA","7-15 LPA","Amazon, Google, Infosys",10
+Django,Backend,2500,"4-7 LPA","7-14 LPA","Amazon, Flipkart, Capgemini",7
+Java Core,Backend,10500,"3-7 LPA","6-14 LPA","TCS, HCL, Infosys, Wipro",10
+Spring Boot,Backend,7000,"4-8 LPA","8-18 LPA","TCS, Infosys, IBM, Capgemini",9
+Node.js,Backend,4000,"4-7 LPA","7-14 LPA","Flipkart, Swiggy, Zomato, PayTM",9
+Express.js,Backend,2800,"3-6 LPA","6-12 LPA","Infosys, Wipro, startups",8
+PHP Core,Backend,3000,"2-4 LPA","5-9 LPA","Wipro, Capgemini, Infosys",7
+Laravel,Backend,900,"3-5 LPA","5-10 LPA","Capgemini, startups",6
+MySQL,Database,4500,"3-6 LPA","6-13 LPA","TCS, Infosys, Wipro, IBM",8
+MongoDB,Database,1200,"4-7 LPA","7-15 LPA","Flipkart, Swiggy, Zomato",7
+Oracle SQL,Database,3500,"3-6 LPA","6-14 LPA","Infosys, TCS, Oracle, IBM",8
+C Programming,Other,900,"2-4 LPA","5-8 LPA","Infosys, Tech Mahindra",6
+C++ with OOPS,Other,2100,"3-6 LPA","7-15 LPA","Infosys, Tech Mahindra, Capgemini",8
+DSA,Other,9500,"4-7 LPA","7-16 LPA","Amazon, Google, TCS",10
+Common Combinations:
+csvTechnologies,Job Role,Vacancies,Fresher Package,Experienced Package,Top Companies,Popularity Score
+"HTML5, CSS3, JavaScript",Frontend Developer,13000,"3-6 LPA","6-14 LPA","TCS, Infosys, Wipro, Capgemini",10
+"HTML5, CSS3, JavaScript, Bootstrap",Frontend Developer,5000,"3-6 LPA","6-12 LPA","TCS, Infosys, Wipro",8
+"HTML5, CSS3, JavaScript, React.js",React Developer,7000,"4-7 LPA","7-16 LPA","Flipkart, Swiggy, Ola, PayTM",9
+"HTML5, CSS3, JavaScript, Angular JS",Angular Developer,5500,"4-7 LPA","7-15 LPA","HCL, TCS, Capgemini",8
+"React.js, Node.js, MongoDB",MERN Stack Developer,2500,"4-8 LPA","8-16 LPA","Flipkart, Swiggy, Zomato, PayTM",9
+"React.js, Node.js, Express.js, MongoDB",MERN Stack Developer,2300,"4-8 LPA","8-16 LPA","Flipkart, Swiggy, Zomato",9
+"Angular JS, Node.js, MongoDB",MEAN Stack Developer,1900,"4-8 LPA","7-15 LPA","Wipro, Capgemini",8
+"Python Core, Django, MySQL",Python Django Developer,2700,"4-7 LPA","7-15 LPA","Amazon, Flipkart, Google",8
+"Java Core, Spring Boot, MySQL",Java Full Stack Developer,8500,"4-8 LPA","8-18 LPA","TCS, Infosys, IBM",9
+"Node.js, Express.js, MongoDB",Node.js Developer,3800,"4-7 LPA","7-13 LPA","Flipkart, Swiggy, Ola",9
+"PHP Core, Laravel, MySQL",PHP Laravel Developer,900,"3-5 LPA","5-10 LPA","Capgemini, startups",6
+"Java Core, MySQL",Java Developer,8500,"3-7 LPA","6-14 LPA","TCS, Infosys, HCL",9
+"Python Core, MySQL",Python Developer,5000,"4-7 LPA","7-14 LPA","Amazon, Infosys, Google",8
+"HTML5, CSS3, JavaScript, jQuery, Bootstrap",Frontend UI Developer,4000,"3-6 LPA","6-12 LPA","Infosys, Capgemini, TCS",7
+```
+
+**Only include combinations using technologies we actually teach!**
