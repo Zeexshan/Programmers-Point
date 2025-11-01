@@ -83,14 +83,28 @@ export default function AdminDataImport() {
       queryClient.invalidateQueries({ queryKey: ["/api/placements"] });
       queryClient.invalidateQueries({ queryKey: ["/api/technologies"] });
       
+      const r = data.results;
+      const totalImported = r.companies.imported + r.combinations.imported + r.inquiries.imported + r.placements.imported + r.technologies.imported;
+      const totalSkipped = r.companies.skipped + r.combinations.skipped + r.inquiries.skipped + r.placements.skipped + r.technologies.skipped;
+      const totalFailed = r.companies.failed + r.combinations.failed + r.inquiries.failed + r.placements.failed + r.technologies.failed;
+      
+      let description = `✅ Imported: ${totalImported} records`;
+      if (totalSkipped > 0) description += ` | ⏭️ Skipped: ${totalSkipped} (already exist)`;
+      if (totalFailed > 0) description += ` | ❌ Failed: ${totalFailed}`;
+      
       toast({ 
-        title: "Success", 
-        description: `Imported: ${data.results.companies} companies, ${data.results.combinations} combinations, ${data.results.inquiries} inquiries, ${data.results.placements} placements, ${data.results.technologies} technologies` 
+        title: "Import Complete", 
+        description,
+        duration: 8000,
       });
+
+      if (data.errors && data.errors.length > 0) {
+        console.error("Import errors:", data.errors);
+      }
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error", 
+        title: "Import Failed", 
         description: error.message || "Failed to import from Google Sheets",
         variant: "destructive"
       });

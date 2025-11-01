@@ -783,157 +783,237 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Import all data from Google Sheets to Database
   app.post("/api/import/google-sheets", async (req, res) => {
+    const results = {
+      companies: { imported: 0, skipped: 0, failed: 0 },
+      combinations: { imported: 0, skipped: 0, failed: 0 },
+      inquiries: { imported: 0, skipped: 0, failed: 0 },
+      placements: { imported: 0, skipped: 0, failed: 0 },
+      technologies: { imported: 0, skipped: 0, failed: 0 },
+    };
+
+    const errors: string[] = [];
+
+    // Import Companies
     try {
-      const results = {
-        companies: 0,
-        combinations: 0,
-        inquiries: 0,
-        placements: 0,
-        technologies: 0,
-      };
+      const sheetCompanies = await readCompanies();
+      const existingCompanies = await storage.getAllCompanies();
+      const existingCompanyNames = new Set(existingCompanies.map(c => c.name.toLowerCase().trim()));
 
-      // Import Companies
-      try {
-        const sheetCompanies = await readCompanies();
-        for (const company of sheetCompanies) {
-          try {
-            await storage.createCompany({
-              name: company.name,
-              logoUrl: company.logoUrl || null,
-              totalPlacements: company.totalPlacements || 0,
-              avgPackage: company.avgPackage || null,
-            });
-            results.companies++;
-          } catch (error) {
-            // Skip if already exists
-            console.log(`Skipping company ${company.name}: already exists`);
+      for (const company of sheetCompanies) {
+        try {
+          if (!company.name?.trim()) {
+            results.companies.failed++;
+            errors.push(`Company: Missing name`);
+            continue;
           }
-        }
-      } catch (error) {
-        console.error("Error importing companies:", error);
-      }
 
-      // Import Technology Combinations
-      try {
-        const sheetCombinations = await readCombinations();
-        for (const combo of sheetCombinations) {
-          try {
-            await storage.createTechnologyCombination({
-              technologies: combo.technologies,
-              jobRole: combo.jobRole,
-              category: combo.category,
-              vacancies: combo.vacancies || 0,
-              fresherPackage: combo.fresherPackage || '',
-              experiencedPackage: combo.experiencedPackage || '',
-              topCompanies: combo.topCompanies,
-              popularityScore: combo.popularityScore || 5,
-            });
-            results.combinations++;
-          } catch (error) {
-            console.log(`Skipping combination ${combo.jobRole}: already exists`);
+          if (existingCompanyNames.has(company.name.toLowerCase().trim())) {
+            results.companies.skipped++;
+            continue;
           }
+
+          await storage.createCompany({
+            name: company.name.trim(),
+            logoUrl: company.logoUrl?.trim() || null,
+            totalPlacements: company.totalPlacements || 0,
+            avgPackage: company.avgPackage?.trim() || null,
+          });
+          results.companies.imported++;
+          existingCompanyNames.add(company.name.toLowerCase().trim());
+        } catch (error: any) {
+          results.companies.failed++;
+          errors.push(`Company "${company.name}": ${error.message}`);
         }
-      } catch (error) {
-        console.error("Error importing combinations:", error);
       }
-
-      // Import Inquiries
-      try {
-        const sheetInquiries = await readInquiries();
-        for (const inquiry of sheetInquiries) {
-          try {
-            await storage.createInquiry({
-              name: inquiry.name,
-              fatherName: inquiry.fatherName || '',
-              phone: inquiry.phone,
-              email: inquiry.email || null,
-              dob: inquiry.dob || null,
-              courseInterest: inquiry.courseInterest,
-              college: inquiry.college || null,
-              branch: inquiry.branch || null,
-              status: inquiry.status || 'Pending',
-            });
-            results.inquiries++;
-          } catch (error) {
-            console.log(`Skipping inquiry ${inquiry.phone}: already exists`);
-          }
-        }
-      } catch (error) {
-        console.error("Error importing inquiries:", error);
-      }
-
-      // Import Placements
-      try {
-        const sheetPlacements = await readPlacements();
-        // First ensure companies exist
-        const existingCompanies = await storage.getAllCompanies();
-        const companyMap = new Map(existingCompanies.map(c => [c.name.toLowerCase(), c.id]));
-
-        for (const placement of sheetPlacements) {
-          try {
-            const companyId = companyMap.get(placement.company.toLowerCase());
-            if (!companyId) {
-              console.log(`Skipping placement for ${placement.studentName}: company ${placement.company} not found`);
-              continue;
-            }
-
-            await storage.createPlacement({
-              studentName: placement.studentName,
-              companyId: companyId,
-              package: placement.package,
-              phone: placement.phone || null,
-              photoUrl: placement.photoUrl || null,
-              profile: placement.profile || null,
-              course: placement.course || null,
-              review: placement.review || null,
-              joiningDate: placement.joiningDate || null,
-            });
-            results.placements++;
-          } catch (error) {
-            console.log(`Skipping placement ${placement.studentName}: error creating`);
-          }
-        }
-      } catch (error) {
-        console.error("Error importing placements:", error);
-      }
-
-      // Import Technologies
-      try {
-        const sheetTechnologies = await readTechnologies();
-        for (const tech of sheetTechnologies) {
-          try {
-            await storage.upsertTechnology({
-              name: tech.name,
-              category: tech.category,
-              subCategory: tech.subCategory || null,
-              displayOrder: tech.displayOrder || 0,
-              vacancies: tech.vacancies || 0,
-              fresherPackage: tech.fresherPackage || '',
-              experiencedPackage: tech.experiencedPackage || '',
-              topCompanies: tech.topCompanies || '',
-              popularityScore: tech.popularityScore || 5,
-              description: tech.description || null,
-            });
-            results.technologies++;
-          } catch (error) {
-            console.log(`Skipping technology ${tech.name}: error creating`);
-          }
-        }
-      } catch (error) {
-        console.error("Error importing technologies:", error);
-      }
-
-      await storage.createLog("google_sheets_import", `Imported ${JSON.stringify(results)}`);
-
-      res.json({
-        success: true,
-        message: "Data imported successfully from Google Sheets",
-        results,
-      });
     } catch (error: any) {
-      console.error("Error importing from Google Sheets:", error);
-      res.status(500).json({ error: error.message });
+      errors.push(`Companies sheet: ${error.message}`);
     }
+
+    // Import Technology Combinations
+    try {
+      const sheetCombinations = await readCombinations();
+      const existingCombinations = await storage.getAllTechnologyCombinations();
+      const existingJobRoles = new Set(existingCombinations.map(c => c.jobRole.toLowerCase().trim()));
+
+      for (const combo of sheetCombinations) {
+        try {
+          if (!combo.jobRole?.trim()) {
+            results.combinations.failed++;
+            errors.push(`Combination: Missing job role`);
+            continue;
+          }
+
+          if (existingJobRoles.has(combo.jobRole.toLowerCase().trim())) {
+            results.combinations.skipped++;
+            continue;
+          }
+
+          await storage.createTechnologyCombination({
+            technologies: Array.isArray(combo.technologies) ? combo.technologies : [],
+            jobRole: combo.jobRole.trim(),
+            category: combo.category || 'Other',
+            vacancies: combo.vacancies || 0,
+            fresherPackage: combo.fresherPackage || '',
+            experiencedPackage: combo.experiencedPackage || '',
+            topCompanies: Array.isArray(combo.topCompanies) ? combo.topCompanies : [],
+            popularityScore: combo.popularityScore || 5,
+          });
+          results.combinations.imported++;
+          existingJobRoles.add(combo.jobRole.toLowerCase().trim());
+        } catch (error: any) {
+          results.combinations.failed++;
+          errors.push(`Combination "${combo.jobRole}": ${error.message}`);
+        }
+      }
+    } catch (error: any) {
+      errors.push(`Combinations sheet: ${error.message}`);
+    }
+
+    // Import Inquiries
+    try {
+      const sheetInquiries = await readInquiries();
+      const existingInquiries = await storage.getAllInquiries();
+      const existingPhones = new Set(existingInquiries.map(i => i.phone.toLowerCase().trim()));
+
+      for (const inquiry of sheetInquiries) {
+        try {
+          if (!inquiry.phone?.trim() || !inquiry.name?.trim()) {
+            results.inquiries.failed++;
+            errors.push(`Inquiry: Missing phone or name`);
+            continue;
+          }
+
+          if (existingPhones.has(inquiry.phone.toLowerCase().trim())) {
+            results.inquiries.skipped++;
+            continue;
+          }
+
+          await storage.createInquiry({
+            name: inquiry.name.trim(),
+            fatherName: inquiry.fatherName?.trim() || '',
+            phone: inquiry.phone.trim(),
+            email: inquiry.email?.trim() || null,
+            dob: inquiry.dob?.trim() || null,
+            courseInterest: inquiry.courseInterest?.trim() || '',
+            college: inquiry.college?.trim() || null,
+            branch: inquiry.branch?.trim() || null,
+            status: inquiry.status || 'Pending',
+          });
+          results.inquiries.imported++;
+          existingPhones.add(inquiry.phone.toLowerCase().trim());
+        } catch (error: any) {
+          results.inquiries.failed++;
+          errors.push(`Inquiry "${inquiry.phone}": ${error.message}`);
+        }
+      }
+    } catch (error: any) {
+      errors.push(`Inquiries sheet: ${error.message}`);
+    }
+
+    // Import Placements
+    try {
+      const sheetPlacements = await readPlacements();
+      const existingCompanies = await storage.getAllCompanies();
+      const companyMap = new Map(existingCompanies.map(c => [c.name.toLowerCase().trim(), c.id]));
+      const existingPlacements = await storage.getAllPlacements();
+      const existingPlacementKeys = new Set(existingPlacements.map(p => 
+        `${p.studentName.toLowerCase().trim()}-${p.companyId}`
+      ));
+
+      for (const placement of sheetPlacements) {
+        try {
+          if (!placement.studentName?.trim() || !placement.company?.trim()) {
+            results.placements.failed++;
+            errors.push(`Placement: Missing student name or company`);
+            continue;
+          }
+
+          const companyId = companyMap.get(placement.company.toLowerCase().trim());
+          if (!companyId) {
+            results.placements.failed++;
+            errors.push(`Placement "${placement.studentName}": Company "${placement.company}" not found`);
+            continue;
+          }
+
+          const placementKey = `${placement.studentName.toLowerCase().trim()}-${companyId}`;
+          if (existingPlacementKeys.has(placementKey)) {
+            results.placements.skipped++;
+            continue;
+          }
+
+          await storage.createPlacement({
+            studentName: placement.studentName.trim(),
+            companyId: companyId,
+            package: placement.package?.trim() || '',
+            phone: placement.phone?.trim() || null,
+            photoUrl: placement.photoUrl?.trim() || null,
+            profile: placement.profile?.trim() || null,
+            course: placement.course?.trim() || null,
+            review: placement.review?.trim() || null,
+            joiningDate: placement.joiningDate?.trim() || null,
+          });
+          results.placements.imported++;
+          existingPlacementKeys.add(placementKey);
+        } catch (error: any) {
+          results.placements.failed++;
+          errors.push(`Placement "${placement.studentName}": ${error.message}`);
+        }
+      }
+    } catch (error: any) {
+      errors.push(`Placements sheet: ${error.message}`);
+    }
+
+    // Import Technologies (uses upsert, so duplicates are handled by updating)
+    try {
+      const sheetTechnologies = await readTechnologies();
+      
+      for (const tech of sheetTechnologies) {
+        try {
+          if (!tech.name?.trim()) {
+            results.technologies.failed++;
+            errors.push(`Technology: Missing name`);
+            continue;
+          }
+
+          await storage.upsertTechnology({
+            name: tech.name.trim(),
+            category: tech.category?.trim() || 'Other',
+            subCategory: tech.subCategory?.trim() || null,
+            displayOrder: tech.displayOrder || 0,
+            vacancies: tech.vacancies || 0,
+            fresherPackage: tech.fresherPackage?.trim() || '',
+            experiencedPackage: tech.experiencedPackage?.trim() || '',
+            topCompanies: tech.topCompanies?.trim() || '',
+            popularityScore: tech.popularityScore || 5,
+            description: tech.description?.trim() || null,
+          });
+          results.technologies.imported++;
+        } catch (error: any) {
+          results.technologies.failed++;
+          errors.push(`Technology "${tech.name}": ${error.message}`);
+        }
+      }
+    } catch (error: any) {
+      errors.push(`Technologies sheet: ${error.message}`);
+    }
+
+    try {
+      await storage.createLog("google_sheets_import", 
+        `Imported: ${results.companies.imported} companies, ${results.combinations.imported} combinations, ` +
+        `${results.inquiries.imported} inquiries, ${results.placements.imported} placements, ${results.technologies.imported} technologies. ` +
+        `Skipped: ${results.companies.skipped + results.combinations.skipped + results.inquiries.skipped + results.placements.skipped + results.technologies.skipped}. ` +
+        `Failed: ${results.companies.failed + results.combinations.failed + results.inquiries.failed + results.placements.failed + results.technologies.failed}`
+      );
+    } catch (error) {
+      console.error("Error creating log:", error);
+    }
+
+    res.json({
+      success: true,
+      message: "Data import from Google Sheets completed",
+      results,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   });
 
   const httpServer = createServer(app);
