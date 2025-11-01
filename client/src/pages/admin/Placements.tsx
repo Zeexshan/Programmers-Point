@@ -20,12 +20,14 @@ export default function AdminPlacements() {
   const [editingPlacement, setEditingPlacement] = useState<Placement | null>(null);
   const { toast } = useToast();
 
-  const { data: placements, isLoading } = useQuery<Placement[]>({
-    queryKey: ["/api/placements"],
+  const { data: placements, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/sheets/placements"],
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
-  const { data: companies } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
+  const { data: companies } = useQuery<any[]>({
+    queryKey: ["/api/sheets/companies"],
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
   const form = useForm<InsertPlacement>({

@@ -63,7 +63,8 @@ export default function InquiryForm() {
 
   const mutation = useMutation({
     mutationFn: async (data: InsertInquiry) => {
-      return await apiRequest("POST", "/api/inquiries", data);
+      // Write to Google Sheets instead of local database
+      return await apiRequest("POST", "/api/sheets/inquiries", data);
     },
     onSuccess: () => {
       setIsSuccess(true);

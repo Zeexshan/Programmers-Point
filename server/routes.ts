@@ -5,7 +5,24 @@ import { insertInquirySchema, insertCompanySchema, insertPlacementSchema, insert
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
-import { getUncachableGoogleSheetClient } from "./googleSheets";
+import {
+  getUncachableGoogleSheetClient,
+  readTechnologies,
+  writeTechnologies,
+  updateTechnology,
+  deleteTechnology,
+  readCombinations,
+  writeCombinations,
+  updateCombination,
+  deleteCombination,
+  readCompanies,
+  writeCompanies,
+  readPlacements,
+  writePlacements,
+  readInquiries,
+  appendInquiry,
+  updateInquiryStatus as updateSheetInquiryStatus,
+} from "./googleSheets";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== INQUIRIES ==========
@@ -530,6 +547,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
         connected: false, 
         message: error.message || "Google Sheets not connected. Please set up the connector in Replit." 
       });
+    }
+  });
+
+  // ========== GOOGLE SHEETS INTEGRATION ==========
+  
+  // Technologies from Google Sheets
+  app.get("/api/sheets/technologies", async (req, res) => {
+    try {
+      const technologies = await readTechnologies();
+      res.json(technologies);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/sheets/technologies", async (req, res) => {
+    try {
+      const technology = req.body;
+      const technologies = await readTechnologies();
+      technologies.push(technology);
+      await writeTechnologies(technologies);
+      res.json({ success: true, technology });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/sheets/technologies/:name", async (req, res) => {
+    try {
+      const { name } = req.params;
+      const updates = req.body;
+      const updated = await updateTechnology(decodeURIComponent(name), updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/sheets/technologies/:name", async (req, res) => {
+    try {
+      const { name } = req.params;
+      await deleteTechnology(decodeURIComponent(name));
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Combinations from Google Sheets
+  app.get("/api/sheets/combinations", async (req, res) => {
+    try {
+      const combinations = await readCombinations();
+      res.json(combinations);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/sheets/combinations", async (req, res) => {
+    try {
+      const combination = req.body;
+      const combinations = await readCombinations();
+      combinations.push(combination);
+      await writeCombinations(combinations);
+      res.json({ success: true, combination });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.patch("/api/sheets/combinations/:jobRole", async (req, res) => {
+    try {
+      const { jobRole } = req.params;
+      const updates = req.body;
+      const updated = await updateCombination(decodeURIComponent(jobRole), updates);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/sheets/combinations/:jobRole", async (req, res) => {
+    try {
+      const { jobRole } = req.params;
+      await deleteCombination(decodeURIComponent(jobRole));
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Companies from Google Sheets
+  app.get("/api/sheets/companies", async (req, res) => {
+    try {
+      const companies = await readCompanies();
+      res.json(companies);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Placements from Google Sheets
+  app.get("/api/sheets/placements", async (req, res) => {
+    try {
+      const placements = await readPlacements();
+      res.json(placements);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Inquiries from Google Sheets
+  app.get("/api/sheets/inquiries", async (req, res) => {
+    try {
+      const inquiries = await readInquiries();
+      res.json(inquiries);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/sheets/inquiries", async (req, res) => {
+    try {
+      const validated = insertInquirySchema.parse(req.body);
+      await appendInquiry(validated);
+      res.json({ success: true });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
+    }
+  });
+
+  app.patch("/api/sheets/inquiries/:phone", async (req, res) => {
+    try {
+      const { phone } = req.params;
+      const { status } = req.body;
+      
+      if (!status || !["Pending", "Joined"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      
+      await updateSheetInquiryStatus(decodeURIComponent(phone), status);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

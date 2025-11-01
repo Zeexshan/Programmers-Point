@@ -19,8 +19,9 @@ export default function AdminCompanies() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const { toast } = useToast();
 
-  const { data: companies, isLoading } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
+  const { data: companies, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/sheets/companies"],
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
   const form = useForm<InsertCompany>({
@@ -34,14 +35,17 @@ export default function AdminCompanies() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCompany) => {
-      if (editingCompany) {
-        return await apiRequest("PATCH", `/api/companies/${editingCompany.id}`, data);
-      }
-      return await apiRequest("POST", "/api/companies", data);
+      // Google Sheets integration: read-only for now
+      // User should edit data directly in Google Sheets at:
+      // https://docs.google.com/spreadsheets/d/1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU
+      toast({ 
+        title: "Google Sheets Integration", 
+        description: "Please update your Google Sheet directly. Changes will appear within 1 hour (cache refresh).",
+      });
+      throw new Error("Please edit data in Google Sheets");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      toast({ title: "Success", description: editingCompany ? "Company updated" : "Company added" });
+      queryClient.invalidateQueries({ queryKey: ["/api/sheets/companies"] });
       setDialogOpen(false);
       setEditingCompany(null);
       form.reset();
@@ -49,12 +53,15 @@ export default function AdminCompanies() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/companies/${id}`, null);
+    mutationFn: async (name: string) => {
+      toast({ 
+        title: "Google Sheets Integration", 
+        description: "Please delete rows directly in your Google Sheet. Changes will appear within 1 hour.",
+      });
+      throw new Error("Please edit data in Google Sheets");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      toast({ title: "Success", description: "Company deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/sheets/companies"] });
     },
   });
 

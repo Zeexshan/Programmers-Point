@@ -266,8 +266,10 @@ export default function CourseExplorer() {
   const [result, setResult] = useState<CombinedResult | null>(null);
   const [isMatching, setIsMatching] = useState(false);
 
-  const { data: technologies, isLoading } = useQuery<Technology[]>({
-    queryKey: ["/api/technologies"],
+  // Fetch technologies from Google Sheets with caching
+  const { data: technologies, isLoading } = useQuery<any[]>({
+    queryKey: ["/api/sheets/technologies"],
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -329,13 +331,26 @@ export default function CourseExplorer() {
     setIsMatching(true);
     
     try {
-      // Call the match API with selected technology names
-      const selectedNames = techs.map(t => t.name);
-      const matches = await apiRequest<TechnologyCombination[]>({
-        url: "/api/technology-combinations/match",
-        method: "POST",
-        body: { selectedTechnologies: selectedNames },
+      // Fetch combinations from Google Sheets and match locally
+      const allCombinations = await apiRequest<any[]>({
+        url: "/api/sheets/combinations",
+        method: "GET",
       });
+      
+      const selectedNames = techs.map(t => t.name);
+      
+      // Find exact or subset matches
+      const matches = allCombinations?.filter((combo: any) => {
+        const comboTechs = combo.technologies;
+        // Check if all selected techs are in this combination
+        return selectedNames.every(name => comboTechs.includes(name));
+      }).sort((a: any, b: any) => {
+        // Prefer exact matches, then sort by popularity
+        const aExact = a.technologies.length === selectedNames.length ? 1 : 0;
+        const bExact = b.technologies.length === selectedNames.length ? 1 : 0;
+        if (aExact !== bExact) return bExact - aExact;
+        return (b.popularityScore || 0) - (a.popularityScore || 0);
+      }) || [];
 
       if (matches && matches.length > 0) {
         const bestMatch = matches[0];
@@ -351,13 +366,13 @@ export default function CourseExplorer() {
           fresherPackage: bestMatch.fresherPackage,
           experiencedPackage: bestMatch.experiencedPackage,
           vacancies: bestMatch.vacancies,
-          companies: bestMatch.topCompanies,
-          skills: [], // We don't have skills in combinations yet
+          companies: Array.isArray(bestMatch.topCompanies) ? bestMatch.topCompanies : bestMatch.topCompanies.split(',').map((c: string) => c.trim()),
+          skills: [],
           techCount: techs.length,
-          description: `${bestMatch.category} • ${bestMatch.commonality}`,
+          description: `${bestMatch.category}${bestMatch.vacancies ? ` • ${bestMatch.vacancies.toLocaleString()} job openings` : ''}`,
           matchType,
           popularityScore: bestMatch.popularityScore,
-          commonality: bestMatch.commonality,
+          commonality: 'Common',
         };
         
         setResult(matchResult);
