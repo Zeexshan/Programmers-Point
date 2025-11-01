@@ -331,19 +331,32 @@ export default function CourseExplorer() {
     setIsMatching(true);
     
     try {
+      console.log("🔍 Fetching combinations from Google Sheets...");
       // Fetch combinations from Google Sheets and match locally
       const allCombinations = await apiRequest<any[]>({
         url: "/api/sheets/combinations",
         method: "GET",
       });
       
+      console.log(`📊 Fetched ${allCombinations?.length || 0} combinations`);
+      
       const selectedNames = techs.map(t => t.name);
+      console.log("🎯 Selected technologies:", selectedNames);
       
       // Find exact or subset matches
       const matches = allCombinations?.filter((combo: any) => {
         const comboTechs = combo.technologies;
         // Check if all selected techs are in this combination
-        return selectedNames.every(name => comboTechs.includes(name));
+        const isMatch = selectedNames.every(name => 
+          comboTechs.some((tech: string) => 
+            tech.toLowerCase().includes(name.toLowerCase()) || 
+            name.toLowerCase().includes(tech.toLowerCase())
+          )
+        );
+        if (isMatch) {
+          console.log("✅ Found match:", combo.jobRole, combo.technologies);
+        }
+        return isMatch;
       }).sort((a: any, b: any) => {
         // Prefer exact matches, then sort by popularity
         const aExact = a.technologies.length === selectedNames.length ? 1 : 0;
