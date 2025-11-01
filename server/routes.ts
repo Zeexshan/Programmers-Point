@@ -24,6 +24,57 @@ import {
   updateInquiryStatus as updateSheetInquiryStatus,
 } from "./googleSheets";
 
+// Queue system to prevent race conditions during Google Sheets sync
+let companiesSyncQueue: Promise<void> = Promise.resolve();
+let combinationsSyncQueue: Promise<void> = Promise.resolve();
+
+// Helper functions to sync database to Google Sheets with queue
+async function syncCompaniesToSheets() {
+  // Chain onto the existing queue to ensure serial execution
+  companiesSyncQueue = companiesSyncQueue.then(async () => {
+    try {
+      const companies = await storage.getAllCompanies();
+      const sheetData = companies.map(c => ({
+        name: c.name,
+        logoUrl: c.logoUrl || '',
+        totalPlacements: c.totalPlacements,
+        avgPackage: c.avgPackage || '',
+      }));
+      await writeCompanies(sheetData);
+      console.log(`Synced ${companies.length} companies to Google Sheets`);
+    } catch (error) {
+      console.error("Error syncing companies to sheets:", error);
+    }
+  });
+  
+  return companiesSyncQueue;
+}
+
+async function syncCombinationsToSheets() {
+  // Chain onto the existing queue to ensure serial execution
+  combinationsSyncQueue = combinationsSyncQueue.then(async () => {
+    try {
+      const combinations = await storage.getAllTechnologyCombinations();
+      const sheetData = combinations.map(c => ({
+        technologies: c.technologies,
+        jobRole: c.jobRole,
+        category: c.category,
+        vacancies: c.vacancies,
+        fresherPackage: c.fresherPackage,
+        experiencedPackage: c.experiencedPackage,
+        topCompanies: c.topCompanies,
+        popularityScore: c.popularityScore,
+      }));
+      await writeCombinations(sheetData);
+      console.log(`Synced ${combinations.length} combinations to Google Sheets`);
+    } catch (error) {
+      console.error("Error syncing combinations to sheets:", error);
+    }
+  });
+  
+  return combinationsSyncQueue;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // ========== INQUIRIES ==========
   
@@ -128,6 +179,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(validated);
       await storage.createLog("company_created", `Company ${company.name} added`);
+      
+      // Sync to Google Sheets in background (don't wait for it)
+      syncCompaniesToSheets().catch(err => console.error("Error syncing companies to sheets:", err));
+      
       res.json(company);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -145,6 +200,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const company = await storage.updateCompany(id, req.body);
       await storage.createLog("company_updated", `Company ${company.name} updated`);
+      
+      // Sync to Google Sheets in background
+      syncCompaniesToSheets().catch(err => console.error("Error syncing companies to sheets:", err));
+      
       res.json(company);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -157,6 +216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       await storage.deleteCompany(id);
       await storage.createLog("company_deleted", `Company deleted`);
+      
+      // Sync to Google Sheets in background
+      syncCompaniesToSheets().catch(err => console.error("Error syncing companies to sheets:", err));
+      
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -291,6 +354,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = insertTechnologyCombinationSchema.parse(req.body);
       const combination = await storage.createTechnologyCombination(validated);
       await storage.createLog("combination_created", `Combination ${combination.jobRole} added`);
+      
+      // Sync to Google Sheets in background
+      syncCombinationsToSheets().catch(err => console.error("Error syncing combinations to sheets:", err));
+      
       res.json(combination);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -308,6 +375,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const combination = await storage.updateTechnologyCombination(id, req.body);
       await storage.createLog("combination_updated", `Combination ${combination.jobRole} updated`);
+      
+      // Sync to Google Sheets in background
+      syncCombinationsToSheets().catch(err => console.error("Error syncing combinations to sheets:", err));
+      
       res.json(combination);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -318,8 +389,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/technology-combinations/:id", async (req, res) => {
     try {
       const { id } = req.params;
+      
+      // Get the combination first to retrieve its jobRole for Google Sheets sync
+      const combination = await storage.getTechnologyCombination(id);
+      
+      // Delete from database
       await storage.deleteTechnologyCombination(id);
       await storage.createLog("combination_deleted", "Combination deleted");
+      
+      // Sync to Google Sheets in background
+      syncCombinationsToSheets().catch(err => console.error("Error syncing combinations to sheets:", err));
+      
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
