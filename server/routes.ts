@@ -779,6 +779,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== DATA IMPORT FROM GOOGLE SHEETS ==========
+  
+  // Import all data from Google Sheets to Database
+  app.post("/api/import/google-sheets", async (req, res) => {
+    try {
+      const results = {
+        companies: 0,
+        combinations: 0,
+        inquiries: 0,
+        placements: 0,
+        technologies: 0,
+      };
+
+      // Import Companies
+      try {
+        const sheetCompanies = await readCompanies();
+        for (const company of sheetCompanies) {
+          try {
+            await storage.createCompany({
+              name: company.name,
+              logoUrl: company.logoUrl || null,
+              totalPlacements: company.totalPlacements || 0,
+              avgPackage: company.avgPackage || null,
+            });
+            results.companies++;
+          } catch (error) {
+            // Skip if already exists
+            console.log(`Skipping company ${company.name}: already exists`);
+          }
+        }
+      } catch (error) {
+        console.error("Error importing companies:", error);
+      }
+
+      // Import Technology Combinations
+      try {
+        const sheetCombinations = await readCombinations();
+        for (const combo of sheetCombinations) {
+          try {
+            await storage.createTechnologyCombination({
+              technologies: combo.technologies,
+              jobRole: combo.jobRole,
+              category: combo.category,
+              vacancies: combo.vacancies || 0,
+              fresherPackage: combo.fresherPackage || '',
+              experiencedPackage: combo.experiencedPackage || '',
+              topCompanies: combo.topCompanies,
+              popularityScore: combo.popularityScore || 5,
+            });
+            results.combinations++;
+          } catch (error) {
+            console.log(`Skipping combination ${combo.jobRole}: already exists`);
+          }
+        }
+      } catch (error) {
+        console.error("Error importing combinations:", error);
+      }
+
+      // Import Inquiries
+      try {
+        const sheetInquiries = await readInquiries();
+        for (const inquiry of sheetInquiries) {
+          try {
+            await storage.createInquiry({
+              name: inquiry.name,
+              fatherName: inquiry.fatherName || '',
+              phone: inquiry.phone,
+              email: inquiry.email || null,
+              dob: inquiry.dob || null,
+              courseInterest: inquiry.courseInterest,
+              college: inquiry.college || null,
+              branch: inquiry.branch || null,
+              status: inquiry.status || 'Pending',
+            });
+            results.inquiries++;
+          } catch (error) {
+            console.log(`Skipping inquiry ${inquiry.phone}: already exists`);
+          }
+        }
+      } catch (error) {
+        console.error("Error importing inquiries:", error);
+      }
+
+      // Import Placements
+      try {
+        const sheetPlacements = await readPlacements();
+        // First ensure companies exist
+        const existingCompanies = await storage.getAllCompanies();
+        const companyMap = new Map(existingCompanies.map(c => [c.name.toLowerCase(), c.id]));
+
+        for (const placement of sheetPlacements) {
+          try {
+            const companyId = companyMap.get(placement.company.toLowerCase());
+            if (!companyId) {
+              console.log(`Skipping placement for ${placement.studentName}: company ${placement.company} not found`);
+              continue;
+            }
+
+            await storage.createPlacement({
+              studentName: placement.studentName,
+              companyId: companyId,
+              package: placement.package,
+              phone: placement.phone || null,
+              photoUrl: placement.photoUrl || null,
+              profile: placement.profile || null,
+              course: placement.course || null,
+              review: placement.review || null,
+              joiningDate: placement.joiningDate || null,
+            });
+            results.placements++;
+          } catch (error) {
+            console.log(`Skipping placement ${placement.studentName}: error creating`);
+          }
+        }
+      } catch (error) {
+        console.error("Error importing placements:", error);
+      }
+
+      // Import Technologies
+      try {
+        const sheetTechnologies = await readTechnologies();
+        for (const tech of sheetTechnologies) {
+          try {
+            await storage.upsertTechnology({
+              name: tech.name,
+              category: tech.category,
+              subCategory: tech.subCategory || null,
+              displayOrder: tech.displayOrder || 0,
+              vacancies: tech.vacancies || 0,
+              fresherPackage: tech.fresherPackage || '',
+              experiencedPackage: tech.experiencedPackage || '',
+              topCompanies: tech.topCompanies || '',
+              popularityScore: tech.popularityScore || 5,
+              description: tech.description || null,
+            });
+            results.technologies++;
+          } catch (error) {
+            console.log(`Skipping technology ${tech.name}: error creating`);
+          }
+        }
+      } catch (error) {
+        console.error("Error importing technologies:", error);
+      }
+
+      await storage.createLog("google_sheets_import", `Imported ${JSON.stringify(results)}`);
+
+      res.json({
+        success: true,
+        message: "Data imported successfully from Google Sheets",
+        results,
+      });
+    } catch (error: any) {
+      console.error("Error importing from Google Sheets:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

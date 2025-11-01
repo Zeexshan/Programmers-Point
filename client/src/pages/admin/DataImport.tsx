@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, AlertCircle, Download } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,6 +67,31 @@ export default function AdminDataImport() {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to import combinations CSV",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const importFromGoogleSheetsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/import/google-sheets");
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/technology-combinations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/placements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/technologies"] });
+      
+      toast({ 
+        title: "Success", 
+        description: `Imported: ${data.results.companies} companies, ${data.results.combinations} combinations, ${data.results.inquiries} inquiries, ${data.results.placements} placements, ${data.results.technologies} technologies` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to import from Google Sheets",
         variant: "destructive"
       });
     }
@@ -179,6 +204,48 @@ export default function AdminDataImport() {
                 This will replace all existing combination data with the new CSV data
               </p>
             </div>
+          </Card>
+        </div>
+
+        <div className="mb-6">
+          <Card className="p-6">
+            <h3 className="text-xl font-semibold font-heading mb-4">Import from Google Sheets</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Import all data (companies, combinations, inquiries, placements, technologies) from your connected Google Sheet into the database.
+            </p>
+            <div className="mb-6">
+              {sheetsStatus === undefined ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>Checking connection...</span>
+                </div>
+              ) : sheetsStatus.connected ? (
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-medium">Google Sheets Connected</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <XCircle className="h-5 w-5" />
+                  <span className="font-medium">Not Connected</span>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground mt-2">
+                {sheetsStatus?.message || "Checking status..."}
+              </p>
+            </div>
+            <Button 
+              className="w-full h-12" 
+              onClick={() => importFromGoogleSheetsMutation.mutate()}
+              disabled={!sheetsStatus?.connected || importFromGoogleSheetsMutation.isPending}
+              data-testid="button-import-google-sheets"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {importFromGoogleSheetsMutation.isPending ? "Importing..." : "Import All Data from Google Sheets"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-4">
+              This will import all data from your Google Sheet. Existing records won't be duplicated.
+            </p>
           </Card>
         </div>
 
