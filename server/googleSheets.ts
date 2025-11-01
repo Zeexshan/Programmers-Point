@@ -66,7 +66,8 @@ export async function readTechnologies() {
 
     const rows = response.data.values || [];
     
-    return rows.map(row => ({
+    return rows.map((row, index) => ({
+      id: `tech-${index}-${row[0]?.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       name: row[0] || '',
       category: row[1] || '',
       subCategory: row[2] || '',
