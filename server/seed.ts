@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { adminUsers, companies, placements, technologies } from "@shared/schema";
 import bcrypt from "bcrypt";
+import { importTechnologyCombinations } from "./import-combinations";
 
 async function seed() {
   console.log("🌱 Seeding database...");
@@ -560,11 +561,17 @@ async function seed() {
   }
   console.log("✓ Technologies seeded (including all CSV data)");
 
+  // Import technology combinations
+  console.log("\n📦 Importing technology combinations...");
+  const { imported, skipped } = await importTechnologyCombinations();
+  console.log(`✓ Technology combinations imported: ${imported} combinations`);
+
   console.log("\n✅ Database seeded successfully!");
   console.log("\n📊 Summary:");
   console.log(`   - ${companiesData.length} companies added`);
   console.log(`   - ${placementsData ? placementsData.length : 6} student placements added`);
   console.log(`   - ${technologiesData.length} technologies added`);
+  console.log(`   - ${imported} technology combinations added`);
   console.log("\n🔐 Admin credentials:");
   console.log("   Username: admin");
   console.log("   Password: admin123");

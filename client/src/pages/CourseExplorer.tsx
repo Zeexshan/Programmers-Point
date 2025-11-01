@@ -266,9 +266,9 @@ export default function CourseExplorer() {
   const [result, setResult] = useState<CombinedResult | null>(null);
   const [isMatching, setIsMatching] = useState(false);
 
-  // Fetch technologies from Google Sheets with caching
+  // Fetch technologies from database with caching
   const { data: technologies, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/sheets/technologies"],
+    queryKey: ["/api/technologies"],
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 

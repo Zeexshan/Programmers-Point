@@ -31,6 +31,7 @@ import {
 import { Trash2, Edit, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { AdminLayout } from "@/components/AdminLayout";
 import type { TechnologyCombination } from "@shared/schema";
 
 export default function TechnologyCombinations() {
@@ -79,7 +80,8 @@ export default function TechnologyCombinations() {
   const categories = ["All", ...new Set(combinations?.map((c) => c.category) || [])];
 
   return (
-    <div className="container max-w-7xl mx-auto px-4 md:px-8 py-8">
+    <AdminLayout>
+      <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold font-heading mb-2" data-testid="text-page-title">
@@ -222,7 +224,8 @@ export default function TechnologyCombinations() {
       <div className="mt-4 text-sm text-muted-foreground text-center">
         Showing {filteredCombinations?.length || 0} of {combinations?.length || 0} technology combinations
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
 
