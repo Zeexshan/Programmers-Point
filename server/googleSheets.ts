@@ -171,27 +171,16 @@ export async function readCombinations() {
 
     const rows = response.data.values || [];
     
-    return rows.map((row, index) => {
-      // Parse technologies - handle both "Tech1, Tech2" and "Tech1 + Tech2" formats
-      const techStr = row[0] || '';
-      const technologies = techStr.includes('+') 
-        ? techStr.split('+').map((t: string) => t.trim())
-        : techStr.split(',').map((t: string) => t.trim());
-      
-      return {
-        id: `combo-${index}`,
-        technologies: technologies.filter(t => t.length > 0),
-        jobRole: row[1] || '',
-        category: row[2] || '',
-        vacancies: parseInt(row[3]) || 0,
-        fresherPackage: row[4] || '',
-        experiencedPackage: row[5] || '',
-        topCompanies: (row[6] || '').split(',').map((c: string) => c.trim()).filter(c => c.length > 0),
-        popularityScore: parseInt(row[7]) || 5,
-        techCount: technologies.filter(t => t.length > 0).length,
-        commonality: parseInt(row[3]) >= 5000 ? 'Common' : parseInt(row[3]) >= 2000 ? 'Moderate' : 'Rare',
-      };
-    });
+    return rows.map(row => ({
+      technologies: (row[0] || '').split(',').map((t: string) => t.trim()),
+      jobRole: row[1] || '',
+      category: row[2] || '',
+      vacancies: parseInt(row[3]) || 0,
+      fresherPackage: row[4] || '',
+      experiencedPackage: row[5] || '',
+      topCompanies: (row[6] || '').split(',').map((c: string) => c.trim()),
+      popularityScore: parseInt(row[7]) || 5,
+    }));
   } catch (error) {
     console.error("Error reading combinations from sheets:", error);
     throw error;

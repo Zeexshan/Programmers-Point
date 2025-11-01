@@ -598,12 +598,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Combinations from Google Sheets
   app.get("/api/sheets/combinations", async (req, res) => {
     try {
-      console.log("📊 Fetching combinations from Google Sheets...");
       const combinations = await readCombinations();
-      console.log(`✅ Successfully fetched ${combinations.length} combinations`);
       res.json(combinations);
     } catch (error: any) {
-      console.error("❌ Error fetching combinations:", error.message);
       res.status(500).json({ error: error.message });
     }
   });
