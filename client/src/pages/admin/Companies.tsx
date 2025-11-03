@@ -1,228 +1,203 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Edit, Building2 } from "lucide-react";
+import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
-import { insertCompanySchema, type InsertCompany, type Company } from "@shared/schema";
+import type { Company } from "@/types";
 
-export default function AdminCompanies() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+export default function Companies() {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const { data: companies, isLoading } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-  });
+  useEffect(() => {
+    loadCompanies();
+  }, []);
 
-  const form = useForm<InsertCompany>({
-    resolver: zodResolver(insertCompanySchema),
-    defaultValues: {
-      name: "",
-      logoUrl: "",
-      avgPackage: "",
-    },
-  });
+  const loadCompanies = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAllData();
+      setCompanies(data.companies);
+    } catch (error) {
+      console.error('Failed to load companies:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load companies",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const createMutation = useMutation({
-    mutationFn: async (data: InsertCompany) => {
-      return await apiRequest(editingCompany ? "PATCH" : "POST", editingCompany ? `/api/companies/${editingCompany.id}` : "/api/companies", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      setDialogOpen(false);
+  const handleSaveEdit = async () => {
+    if (!editingCompany) return;
+
+    try {
+      setIsSaving(true);
+      const companyIndex = companies.findIndex(c => c.name === editingCompany.name);
+      
+      if (companyIndex === -1) {
+        throw new Error("Company not found");
+      }
+
+      const values = [[
+        editingCompany.name,
+        editingCompany.logoUrl,
+        editingCompany.totalPlacements.toString(),
+        editingCompany.avgPackage
+      ]];
+
+      await updateSheet('Companies', `A${companyIndex + 2}:D${companyIndex + 2}`, values);
+      
+      clearCache();
+      await loadCompanies();
+      
       setEditingCompany(null);
-      form.reset();
-      toast({ 
-        title: "Success", 
-        description: `Company ${editingCompany ? "updated" : "added"} successfully. Changes will be synced to Google Sheets.`,
+      toast({
+        title: "Success",
+        description: "Company updated successfully",
       });
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Error", 
-        description: error.message,
+    } catch (error: any) {
+      console.error('Failed to update company:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update company",
         variant: "destructive",
       });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/companies/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      toast({ 
-        title: "Success", 
-        description: "Company deleted successfully. Changes will be synced to Google Sheets.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "Error", 
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleEdit = (company: Company) => {
-    setEditingCompany(company);
-    form.reset({
-      name: company.name,
-      logoUrl: company.logoUrl || "",
-      avgPackage: company.avgPackage || "",
-    });
-    setDialogOpen(true);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleAdd = () => {
-    setEditingCompany(null);
-    form.reset({
-      name: "",
-      logoUrl: "",
-      avgPackage: "",
-    });
-    setDialogOpen(true);
-  };
+  if (loading) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner text="Loading companies..." />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold font-heading" data-testid="text-page-title">Companies</h1>
-            <p className="text-muted-foreground">Manage partner companies</p>
-          </div>
-          <Button onClick={handleAdd} data-testid="button-add-company">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Company
-          </Button>
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Companies</h1>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {isLoading ? (
-            [...Array(8)].map((_, i) => (
-              <Card key={i} className="p-6 animate-pulse">
-                <div className="bg-muted h-20 w-20 mx-auto mb-4 rounded" />
-                <div className="bg-muted h-6 w-24 mx-auto mb-2 rounded" />
-              </Card>
-            ))
-          ) : companies?.length === 0 ? (
-            <Card className="p-8 col-span-full text-center text-muted-foreground">
-              No companies found. Click "Add Company" to create one.
-            </Card>
-          ) : (
-            companies?.map((company) => (
-              <Card key={company.id} className="p-6" data-testid={`card-company-${company.id}`}>
-                <div className="text-center mb-4">
-                  {company.logoUrl ? (
-                    <img
-                      src={company.logoUrl}
-                      alt={company.name}
-                      className="h-20 w-20 object-contain mx-auto"
-                    />
-                  ) : (
-                    <div className="h-20 w-20 bg-muted rounded mx-auto" />
-                  )}
-                </div>
-                <h3 className="font-semibold text-center mb-2">{company.name}</h3>
-                <p className="text-sm text-center text-muted-foreground mb-4">
-                  {company.totalPlacements} Placements
-                </p>
-                {company.avgPackage && (
-                  <p className="text-sm text-center text-muted-foreground mb-4">
-                    Avg: {company.avgPackage}
-                  </p>
+          {companies.map((company) => (
+            <Card key={company.name} className="p-6" data-testid={`card-company-${company.name.toLowerCase().replace(/\s+/g, '-')}`}>
+              <div className="text-center">
+                {company.logoUrl ? (
+                  <img
+                    src={company.logoUrl}
+                    alt={company.name}
+                    className="h-20 w-20 object-contain mx-auto mb-4"
+                  />
+                ) : (
+                  <div className="h-20 w-20 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Building2 className="h-10 w-10 text-muted-foreground" />
+                  </div>
                 )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-10"
-                    onClick={() => handleEdit(company)}
-                    data-testid={`button-edit-${company.id}`}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-10 text-destructive hover:text-destructive"
-                    onClick={() => deleteMutation.mutate(company.id)}
-                    data-testid={`button-delete-${company.id}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
-            ))
-          )}
+                <h3 className="font-semibold mb-2">{company.name}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {company.totalPlacements} placements
+                </p>
+                <p className="text-sm font-medium text-primary mb-4">
+                  {company.avgPackage}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCompany(company)}
+                  className="w-full min-h-[48px]"
+                  data-testid={`button-edit-${company.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
+        {/* Edit Dialog */}
+        <Dialog open={!!editingCompany} onOpenChange={() => setEditingCompany(null)}>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{editingCompany ? "Edit Company" : "Add Company"}</DialogTitle>
+              <DialogTitle>Edit Company</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company Name *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., TCS, Infosys" className="h-12" data-testid="input-company-name" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="logoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Logo URL (optional)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="https://..." className="h-12" data-testid="input-logo-url" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="avgPackage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Average Package (optional)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., 8-12 LPA" className="h-12" data-testid="input-avg-package" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full h-12" disabled={createMutation.isPending} data-testid="button-save-company">
-                  {createMutation.isPending ? "Saving..." : (editingCompany ? "Update" : "Add")}
-                </Button>
-              </form>
-            </Form>
+            {editingCompany && (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Company Name</Label>
+                  <Input
+                    value={editingCompany.name}
+                    onChange={(e) => setEditingCompany({...editingCompany, name: e.target.value})}
+                    className="h-[48px]"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Logo URL</Label>
+                  <Input
+                    value={editingCompany.logoUrl}
+                    onChange={(e) => setEditingCompany({...editingCompany, logoUrl: e.target.value})}
+                    className="h-[48px]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Total Placements</Label>
+                    <Input
+                      type="number"
+                      value={editingCompany.totalPlacements}
+                      onChange={(e) => setEditingCompany({...editingCompany, totalPlacements: parseInt(e.target.value)})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Average Package</Label>
+                    <Input
+                      value={editingCompany.avgPackage}
+                      onChange={(e) => setEditingCompany({...editingCompany, avgPackage: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingCompany(null)}
+                    className="min-h-[48px]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEdit}
+                    disabled={isSaving}
+                    className="min-h-[48px]"
+                    data-testid="button-save-company"
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

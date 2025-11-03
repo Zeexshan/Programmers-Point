@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
   Select,
   SelectContent,
@@ -13,74 +12,143 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, Search } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { readInquiries, updateSheet, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
-import type { Inquiry } from "@shared/schema";
+import type { Inquiry } from "@/types";
 
-export default function AdminInquiries() {
+export default function Inquiries() {
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [filteredInquiries, setFilteredInquiries] = useState<Inquiry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("All");
   const { toast } = useToast();
 
-  const { data: inquiries, isLoading } = useQuery<Inquiry[]>({
-    queryKey: ["/api/inquiries"],
-  });
+  useEffect(() => {
+    loadInquiries();
+  }, []);
 
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      return await apiRequest("PATCH", `/api/inquiries/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/inquiries"] });
-      toast({ title: "Success", description: "Status updated successfully" });
-    },
-  });
+  useEffect(() => {
+    filterInquiries();
+  }, [inquiries, search, statusFilter]);
 
-  const exportExcelMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/inquiries/export");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `inquiries_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Excel file downloaded" });
-    },
-  });
+  const loadInquiries = async () => {
+    try {
+      setLoading(true);
+      const data = await readInquiries();
+      setInquiries(data);
+    } catch (error) {
+      console.error('Failed to load inquiries:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load inquiries",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredInquiries = inquiries?.filter(inquiry => {
-    const matchesSearch = inquiry.name.toLowerCase().includes(search.toLowerCase()) ||
-                         inquiry.phone.includes(search) ||
-                         inquiry.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || inquiry.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filterInquiries = () => {
+    let filtered = inquiries;
+    
+    if (statusFilter !== "All") {
+      filtered = filtered.filter(i => i.status === statusFilter);
+    }
+    
+    if (search) {
+      filtered = filtered.filter(i => 
+        i.name.toLowerCase().includes(search.toLowerCase()) ||
+        i.phone.includes(search) ||
+        i.email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    setFilteredInquiries(filtered);
+  };
+
+  const handleMarkAsJoined = async (index: number) => {
+    try {
+      const inquiry = inquiries[index];
+      const values = [[
+        inquiry.timestamp,
+        inquiry.name,
+        inquiry.fatherName,
+        inquiry.phone,
+        inquiry.email,
+        inquiry.dob,
+        inquiry.courseInterest,
+        inquiry.college,
+        inquiry.branch,
+        'Joined'
+      ]];
+
+      await updateSheet('Inquiries', `A${index + 2}:J${index + 2}`, values);
+      
+      clearCache();
+      await loadInquiries();
+      
+      toast({
+        title: "Success",
+        description: "Status updated to Joined",
+      });
+    } catch (error: any) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportPhoneNumbers = () => {
+    const pendingInquiries = inquiries.filter(i => i.status === "Pending");
+    const csvContent = "Name,Phone\n" + 
+      pendingInquiries.map(i => `${i.name},${i.phone}`).join("\n");
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pending_inquiries_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: "Success",
+      description: "Phone numbers exported successfully",
+    });
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner text="Loading inquiries..." />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold font-heading" data-testid="text-page-title">Inquiries</h1>
+            <h1 className="text-3xl font-bold" data-testid="text-page-title">Inquiries</h1>
             <p className="text-muted-foreground">Manage student inquiries</p>
           </div>
           <Button
-            onClick={() => exportExcelMutation.mutate()}
-            disabled={exportExcelMutation.isPending}
+            onClick={handleExportPhoneNumbers}
+            className="min-h-[48px]"
             data-testid="button-export"
           >
             <Download className="mr-2 h-4 w-4" />
-            Export to Excel
+            Export Phone Numbers
           </Button>
         </div>
 
-        {/* Filters */}
         <Card className="p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -89,16 +157,16 @@ export default function AdminInquiries() {
                 placeholder="Search by name, phone, or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 h-12"
+                className="pl-10 h-[48px]"
                 data-testid="input-search"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48 h-12" data-testid="select-status">
+              <SelectTrigger className="w-full md:w-48 h-[48px]" data-testid="select-status">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="All">All Status</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="Joined">Joined</SelectItem>
               </SelectContent>
@@ -106,72 +174,66 @@ export default function AdminInquiries() {
           </div>
         </Card>
 
-        {/* Table */}
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 sticky top-0">
-                <tr className="h-14">
-                  <th className="px-6 text-left text-sm font-semibold">Name</th>
-                  <th className="px-6 text-left text-sm font-semibold">Phone</th>
-                  <th className="px-6 text-left text-sm font-semibold">Email</th>
-                  <th className="px-6 text-left text-sm font-semibold">Course</th>
-                  <th className="px-6 text-left text-sm font-semibold">College</th>
-                  <th className="px-6 text-left text-sm font-semibold">Date</th>
-                  <th className="px-6 text-left text-sm font-semibold">Status</th>
-                  <th className="px-6 text-left text-sm font-semibold">Action</th>
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Phone</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Course</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">College</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : filteredInquiries?.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No inquiries found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredInquiries?.map((inquiry) => (
-                    <tr key={inquiry.id} className="border-t h-16 hover:bg-muted/30" data-testid={`row-inquiry-${inquiry.id}`}>
-                      <td className="px-6">{inquiry.name}</td>
-                      <td className="px-6">{inquiry.phone}</td>
-                      <td className="px-6 text-sm">{inquiry.email}</td>
-                      <td className="px-6">{inquiry.courseInterest}</td>
-                      <td className="px-6 text-sm">{inquiry.college}</td>
-                      <td className="px-6 text-sm text-muted-foreground">
-                        {new Date(inquiry.createdAt).toLocaleDateString()}
+                {filteredInquiries.map((inquiry, index) => {
+                  const originalIndex = inquiries.findIndex(i => 
+                    i.name === inquiry.name && 
+                    i.phone === inquiry.phone && 
+                    i.timestamp === inquiry.timestamp
+                  );
+                  
+                  return (
+                    <tr key={index} className="border-t hover:bg-muted/30">
+                      <td className="px-6 py-4">{inquiry.name}</td>
+                      <td className="px-6 py-4">{inquiry.phone}</td>
+                      <td className="px-6 py-4">{inquiry.email}</td>
+                      <td className="px-6 py-4">{inquiry.courseInterest}</td>
+                      <td className="px-6 py-4">{inquiry.college}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {inquiry.timestamp ? new Date(inquiry.timestamp).toLocaleDateString() : '-'}
                       </td>
-                      <td className="px-6">
-                        <Badge
-                          variant={inquiry.status === "Joined" ? "default" : "secondary"}
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            inquiry.status === "Joined"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                              : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                          }`}
                         >
                           {inquiry.status}
-                        </Badge>
+                        </span>
                       </td>
-                      <td className="px-6">
-                        <Select
-                          value={inquiry.status}
-                          onValueChange={(value) =>
-                            updateStatusMutation.mutate({ id: inquiry.id, status: value })
-                          }
-                        >
-                          <SelectTrigger className="w-32 h-10">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Joined">Joined</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <td className="px-6 py-4">
+                        {inquiry.status === "Pending" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMarkAsJoined(originalIndex)}
+                            className="min-h-[40px]"
+                            data-testid={`button-mark-joined-${index}`}
+                          >
+                            Mark as Joined
+                          </Button>
+                        )}
                       </td>
                     </tr>
-                  ))
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>

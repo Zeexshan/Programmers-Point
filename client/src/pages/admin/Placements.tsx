@@ -1,375 +1,300 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Edit } from "lucide-react";
+import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
-import { insertPlacementSchema, type InsertPlacement, type Placement, type Company } from "@shared/schema";
+import type { Placement, AllData } from "@/types";
 
-export default function AdminPlacements() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+export default function Placements() {
+  const [allData, setAllData] = useState<AllData | null>(null);
+  const [filteredPlacements, setFilteredPlacements] = useState<Placement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [companyFilter, setCompanyFilter] = useState("All");
   const [editingPlacement, setEditingPlacement] = useState<Placement | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  const { data: placements, isLoading } = useQuery<any[]>({
-    queryKey: ["/api/sheets/placements"],
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
-  });
+  useEffect(() => {
+    loadPlacements();
+  }, []);
 
-  const { data: companies } = useQuery<any[]>({
-    queryKey: ["/api/sheets/companies"],
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
-  });
-
-  const form = useForm<InsertPlacement>({
-    resolver: zodResolver(insertPlacementSchema),
-    defaultValues: {
-      studentName: "",
-      companyId: "",
-      package: "",
-      phone: "",
-      photoUrl: "",
-      profile: "",
-      course: "",
-      review: "",
-      interviewRounds: "",
-      studyDuration: "",
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (data: InsertPlacement) => {
-      if (editingPlacement) {
-        return await apiRequest("PATCH", `/api/placements/${editingPlacement.id}`, data);
-      }
-      return await apiRequest("POST", "/api/placements", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/placements"] });
-      toast({ title: "Success", description: editingPlacement ? "Placement updated" : "Placement added" });
-      setDialogOpen(false);
-      setEditingPlacement(null);
-      form.reset();
-    },
-    onError: (error: any) => {
-      toast({ 
-        title: "Error", 
-        description: error.message || "Failed to save placement",
-        variant: "destructive"
-      });
+  useEffect(() => {
+    if (allData) {
+      filterPlacements();
     }
-  });
+  }, [allData, companyFilter]);
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/placements/${id}`, null);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/placements"] });
-      toast({ title: "Success", description: "Placement deleted" });
-    },
-  });
-
-  const handleEdit = (placement: Placement) => {
-    setEditingPlacement(placement);
-    form.reset({
-      studentName: placement.studentName,
-      companyId: placement.companyId,
-      package: placement.package,
-      phone: placement.phone,
-      photoUrl: placement.photoUrl || "",
-      profile: placement.profile,
-      course: placement.course,
-      review: placement.review || "",
-      interviewRounds: placement.interviewRounds || "",
-      studyDuration: placement.studyDuration || "",
-    });
-    setDialogOpen(true);
+  const loadPlacements = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchAllData();
+      setAllData(data);
+    } catch (error) {
+      console.error('Failed to load placements:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load placements",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAdd = () => {
-    setEditingPlacement(null);
-    form.reset({
-      studentName: "",
-      companyId: "",
-      package: "",
-      phone: "",
-      photoUrl: "",
-      profile: "",
-      course: "",
-      review: "",
-      interviewRounds: "",
-      studyDuration: "",
-    });
-    setDialogOpen(true);
+  const filterPlacements = () => {
+    if (!allData) return;
+    
+    if (companyFilter === "All") {
+      setFilteredPlacements(allData.placements);
+    } else {
+      setFilteredPlacements(allData.placements.filter(p => p.company === companyFilter));
+    }
   };
 
-  const getCompanyName = (companyId: string) => {
-    return companies?.find(c => c.id === companyId)?.name || "Unknown";
+  const handleSaveEdit = async () => {
+    if (!editingPlacement || !allData) return;
+
+    try {
+      setIsSaving(true);
+      const placementIndex = allData.placements.findIndex(
+        p => p.studentName === editingPlacement.studentName && p.company === editingPlacement.company
+      );
+      
+      if (placementIndex === -1) {
+        throw new Error("Placement not found");
+      }
+
+      const values = [[
+        editingPlacement.studentName,
+        editingPlacement.company,
+        editingPlacement.package,
+        editingPlacement.phone,
+        editingPlacement.photoUrl,
+        editingPlacement.profile,
+        editingPlacement.course,
+        editingPlacement.review,
+        editingPlacement.joiningDate
+      ]];
+
+      await updateSheet('Placements', `A${placementIndex + 2}:I${placementIndex + 2}`, values);
+      
+      clearCache();
+      await loadPlacements();
+      
+      setEditingPlacement(null);
+      toast({
+        title: "Success",
+        description: "Placement updated successfully",
+      });
+    } catch (error: any) {
+      console.error('Failed to update placement:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update placement",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <LoadingSpinner text="Loading placements..." />
+      </AdminLayout>
+    );
+  }
+
+  const companies = ["All", ...Array.from(new Set(allData?.placements.map(p => p.company) || []))];
 
   return (
     <AdminLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold font-heading" data-testid="text-page-title">Placements</h1>
-            <p className="text-muted-foreground">Manage student placements</p>
-          </div>
-          <Button onClick={handleAdd} data-testid="button-add-placement">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Placement
-          </Button>
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold" data-testid="text-page-title">Placements</h1>
         </div>
+
+        <Card className="p-6 mb-6">
+          <div className="flex gap-4">
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-full md:w-[200px] h-[48px]" data-testid="select-company-filter">
+                <SelectValue placeholder="Filter by company" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map(company => (
+                  <SelectItem key={company} value={company}>{company}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
 
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted/50 sticky top-0">
-                <tr className="h-14">
-                  <th className="px-6 text-left text-sm font-semibold">Student Name</th>
-                  <th className="px-6 text-left text-sm font-semibold">Company</th>
-                  <th className="px-6 text-left text-sm font-semibold">Profile</th>
-                  <th className="px-6 text-left text-sm font-semibold">Package</th>
-                  <th className="px-6 text-left text-sm font-semibold">Course</th>
-                  <th className="px-6 text-left text-sm font-semibold">Phone</th>
-                  <th className="px-6 text-left text-sm font-semibold">Actions</th>
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Student Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Company</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Package</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Profile</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Course</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : placements?.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No placements found. Click "Add Placement" to create one.
-                    </td>
-                  </tr>
-                ) : (
-                  placements?.map((placement) => (
-                    <tr key={placement.id} className="border-t h-16 hover:bg-muted/30" data-testid={`row-placement-${placement.id}`}>
-                      <td className="px-6">{placement.studentName}</td>
-                      <td className="px-6">{getCompanyName(placement.companyId)}</td>
-                      <td className="px-6">{placement.profile}</td>
-                      <td className="px-6 font-semibold text-primary">{placement.package}</td>
-                      <td className="px-6 text-sm">{placement.course}</td>
-                      <td className="px-6 text-sm">{placement.phone}</td>
-                      <td className="px-6">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-10"
-                            onClick={() => handleEdit(placement)}
-                            data-testid={`button-edit-${placement.id}`}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-10 text-destructive hover:text-destructive"
-                            onClick={() => deleteMutation.mutate(placement.id)}
-                            data-testid={`button-delete-${placement.id}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                {filteredPlacements.map((placement, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{placement.studentName}</TableCell>
+                    <TableCell>{placement.company}</TableCell>
+                    <TableCell>{placement.package}</TableCell>
+                    <TableCell>{placement.profile}</TableCell>
+                    <TableCell>{placement.course}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingPlacement(placement)}
+                        data-testid={`button-edit-${placement.studentName.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </tbody>
             </table>
           </div>
         </Card>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Edit Dialog */}
+        <Dialog open={!!editingPlacement} onOpenChange={() => setEditingPlacement(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingPlacement ? "Edit Placement" : "Add Student Placement"}</DialogTitle>
+              <DialogTitle>Edit Placement</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="studentName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Student Name *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., Sachin Kumar" className="h-12" data-testid="input-student-name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="companyId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-12" data-testid="select-company">
-                              <SelectValue placeholder="Select company" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {companies?.map((company) => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="profile"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profile/Job Title *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., Java Developer" className="h-12" data-testid="input-profile" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="package"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Package *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., 4 LPA" className="h-12" data-testid="input-package" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="+919876543210" className="h-12" data-testid="input-phone" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="course"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Course Completed *</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., Core Java + Advanced Java" className="h-12" data-testid="input-course" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="photoUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Photo URL (optional)</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://... or leave blank for avatar" className="h-12" data-testid="input-photo-url" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="studyDuration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Study Duration (optional)</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="e.g., 6 months" className="h-12" data-testid="input-study-duration" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+            {editingPlacement && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Student Name</Label>
+                    <Input
+                      value={editingPlacement.studentName}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, studentName: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Company</Label>
+                    <Input
+                      value={editingPlacement.company}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, company: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Package</Label>
+                    <Input
+                      value={editingPlacement.package}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, package: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Phone</Label>
+                    <Input
+                      value={editingPlacement.phone}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, phone: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Profile</Label>
+                    <Input
+                      value={editingPlacement.profile}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, profile: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Course</Label>
+                    <Input
+                      value={editingPlacement.course}
+                      onChange={(e) => setEditingPlacement({...editingPlacement, course: e.target.value})}
+                      className="h-[48px]"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Photo URL</Label>
+                  <Input
+                    value={editingPlacement.photoUrl}
+                    onChange={(e) => setEditingPlacement({...editingPlacement, photoUrl: e.target.value})}
+                    className="h-[48px]"
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="interviewRounds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Interview Rounds (optional)</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g., 3 rounds - Technical, Managerial, HR" className="h-12" data-testid="input-interview-rounds" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="review"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Student Review (optional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="Student's testimonial about the training..." 
-                          className="min-h-20" 
-                          data-testid="textarea-review"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button type="submit" className="w-full h-12" disabled={createMutation.isPending} data-testid="button-save-placement">
-                  {createMutation.isPending ? "Saving..." : (editingPlacement ? "Update Placement" : "Add Placement")}
-                </Button>
-              </form>
-            </Form>
+                <div className="grid gap-2">
+                  <Label>Review</Label>
+                  <Textarea
+                    value={editingPlacement.review}
+                    onChange={(e) => setEditingPlacement({...editingPlacement, review: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingPlacement(null)}
+                    className="min-h-[48px]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEdit}
+                    disabled={isSaving}
+                    className="min-h-[48px]"
+                    data-testid="button-save-placement"
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
     </AdminLayout>
   );
+}
+
+function TableRow({ children }: { children: React.ReactNode }) {
+  return <tr className="border-t hover:bg-muted/30">{children}</tr>;
+}
+
+function TableCell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <td className={`px-6 py-4 ${className}`}>{children}</td>;
 }
