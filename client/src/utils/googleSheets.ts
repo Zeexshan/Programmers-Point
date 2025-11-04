@@ -44,15 +44,25 @@ export async function readSheet(sheetName: string, range = 'A2:Z'): Promise<any[
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!${range}?key=${API_KEY}`;
   
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch ${sheetName}: ${response.statusText}`);
+      const errorData = await response.json();
+      console.error('Google Sheets API Error:', errorData);
+      throw new Error(errorData.error?.message || `Failed to fetch ${sheetName}: ${response.statusText}`);
     }
+
     const data = await response.json();
     return data.values || [];
   } catch (error) {
     console.error(`Error reading ${sheetName}:`, error);
-    throw error;
+    // Return empty array instead of throwing, so UI doesn't break
+    return [];
   }
 }
 
@@ -62,6 +72,10 @@ export async function fetchAllData(): Promise<AllData> {
     return cached;
   }
 
+  console.log('Fetching data from Google Sheets...');
+  console.log('Sheet ID:', SHEET_ID ? 'Set' : 'Missing');
+  console.log('API Key:', API_KEY ? 'Set' : 'Missing');
+
   try {
     const [technologies, combinations, companies, placements] = await Promise.all([
       readSheet('Technologies', 'A2:J'),
@@ -69,6 +83,13 @@ export async function fetchAllData(): Promise<AllData> {
       readSheet('Companies', 'A2:D'),
       readSheet('Placements', 'A2:I')
     ]);
+
+    console.log('Data fetched:', {
+      technologies: technologies.length,
+      combinations: combinations.length,
+      companies: companies.length,
+      placements: placements.length
+    });
 
     const allData: AllData = {
       technologies: technologies.map(row => ({
@@ -265,17 +286,22 @@ export async function updateSheet(
 }
 
 export async function readInquiries(): Promise<any[]> {
-  const data = await readSheet('Inquiries', 'A2:J');
-  return data.map(row => ({
-    timestamp: row[0] || '',
-    name: row[1] || '',
-    fatherName: row[2] || '',
-    phone: row[3] || '',
-    email: row[4] || '',
-    dob: row[5] || '',
-    courseInterest: row[6] || '',
-    college: row[7] || '',
-    branch: row[8] || '',
-    status: row[9] || 'Pending'
-  }));
+  try {
+    const data = await readSheet('Inquiries', 'A2:J');
+    return data.map(row => ({
+      timestamp: row[0] || '',
+      name: row[1] || '',
+      fatherName: row[2] || '',
+      phone: row[3] || '',
+      email: row[4] || '',
+      dob: row[5] || '',
+      courseInterest: row[6] || '',
+      college: row[7] || '',
+      branch: row[8] || '',
+      status: row[9] || 'Pending'
+    }));
+  } catch (error) {
+    console.error('Failed to load inquiries:', error);
+    return [];
+  }
 }

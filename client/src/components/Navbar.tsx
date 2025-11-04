@@ -19,13 +19,11 @@ export function Navbar() {
     <nav className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 py-5">
         <div className="flex items-center justify-between h-16">
-          <Link href="/">
-            <a className="flex items-center space-x-3" data-testid="link-home">
-              <img src={logoUrl} alt="Programmers Point" className="h-12" data-testid="img-logo" />
-              <span className="text-xl font-bold text-primary hidden sm:inline">
-                Programmers Point
-              </span>
-            </a>
+          <Link href="/" className="flex items-center space-x-3" data-testid="link-home">
+            <img src={logoUrl} alt="Programmers Point" className="h-12" data-testid="img-logo" />
+            <span className="text-xl font-bold text-primary hidden sm:inline">
+              Programmers Point
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
