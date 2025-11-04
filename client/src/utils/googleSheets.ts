@@ -11,14 +11,14 @@ export function getCachedData(key: string) {
   try {
     const cached = localStorage.getItem(key);
     if (!cached) return null;
-
+    
     const { data, timestamp } = JSON.parse(cached);
-
+    
     if (Date.now() - timestamp > CACHE_DURATION) {
       localStorage.removeItem(key);
       return null;
     }
-
+    
     return data;
   } catch {
     return null;
@@ -42,12 +42,10 @@ export function clearCache() {
 
 export async function readSheet(sheetName: string, range = 'A2:Z'): Promise<any[][]> {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!${range}?key=${API_KEY}`;
-
+  
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`Failed to fetch ${sheetName}:`, response.status, errorData);
       throw new Error(`Failed to fetch ${sheetName}: ${response.statusText}`);
     }
     const data = await response.json();
@@ -145,15 +143,15 @@ async function createJWT(email: string, privateKey: string): Promise<string> {
   };
 
   const unsignedToken = `${base64UrlEncode(header)}.${base64UrlEncode(payload)}`;
-
+  
   const keyData = privateKey
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
     .replace(/\\n/g, '')
     .replace(/\s/g, '');
-
+  
   const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
-
+  
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     binaryKey,
@@ -183,7 +181,7 @@ async function createJWT(email: string, privateKey: string): Promise<string> {
 
 async function getAccessToken(email: string, privateKey: string): Promise<string> {
   const jwt = await createJWT(email, privateKey);
-
+  
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -192,11 +190,11 @@ async function getAccessToken(email: string, privateKey: string): Promise<string
       assertion: jwt
     })
   });
-
+  
   if (!response.ok) {
     throw new Error('Failed to get access token');
   }
-
+  
   const data = await response.json();
   return data.access_token;
 }
@@ -207,9 +205,9 @@ export async function appendToInquiries(formData: InquiryFormData): Promise<void
   }
 
   const token = await getAccessToken(SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY);
-
+  
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Inquiries!A:J:append?valueInputOption=RAW`;
-
+  
   const row = [
     new Date().toISOString(),
     formData.name,
@@ -247,9 +245,9 @@ export async function updateSheet(
   }
 
   const token = await getAccessToken(SERVICE_ACCOUNT_EMAIL, PRIVATE_KEY);
-
+  
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!${range}?valueInputOption=RAW`;
-
+  
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
