@@ -1,0 +1,388 @@
+Hi! I imported this project from GitHub. The app is almost complete but I cannot see the preview. I'm getting Vite host blocking errors. Please help me verify and fix everything:**
+
+---
+
+## 🔴 **ISSUE 1: Preview Not Working - URGENT FIX**
+
+**Error I'm seeing:**
+```
+Blocked request. This host is not allowed.
+To allow this host, add "..." to `server.allowedHosts` in vite.config.js.
+```
+
+**Console shows:**
+```
+Local:   http://localhost:5000/
+Network: http://172.31.78.162:5000/
+```
+
+Both links don't work, and preview page shows "webpage might be temporarily down."
+
+---
+
+### **Solution: Fix Vite Config**
+
+**Please update `vite.config.js` (or `vite.config.ts`) with this:**
+
+```javascript
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: false,
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss'
+    }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5173
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false
+  }
+})
+```
+
+**Then restart the dev server:**
+```bash
+# Stop current server (Ctrl+C)
+npm run dev
+```
+
+---
+
+## ✅ **VERIFICATION CHECKLIST**
+
+Before I can test, please verify these files exist and are correct:
+
+### **1. Check Project Structure:**
+
+Please confirm these files/folders exist:
+```
+project-root/
+├── client/
+│   ├── src/
+│   │   ├── App.jsx (or App.tsx)
+│   │   ├── main.jsx (or main.tsx)
+│   │   ├── pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── CourseExplorer.jsx
+│   │   │   ├── Placements.jsx
+│   │   │   ├── InquiryForm.jsx
+│   │   │   └── admin/
+│   │   ├── components/
+│   │   ├── utils/
+│   │   │   └── googleSheets.js (or .ts)
+│   │   └── types/
+│   ├── index.html
+│   └── (Vite frontend files)
+├── netlify/
+│   └── functions/
+│       └── submit-inquiry.js
+├── package.json
+├── vite.config.js (or .ts)
+├── netlify.toml
+├── .env.example
+└── README.md
+```
+
+**If structure is different, please tell me what exists.**
+
+---
+
+### **2. Check `package.json`:**
+
+Please confirm `package.json` has:
+
+```json
+{
+  "name": "programmers-point-app",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.x",
+    "@dnd-kit/core": "^6.x",
+    "@dnd-kit/sortable": "^7.x"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.x",
+    "vite": "^5.x",
+    "tailwindcss": "^3.x",
+    "googleapis": "^128.0.0"
+  }
+}
+```
+
+**If different or missing dependencies, run:**
+```bash
+npm install
+```
+
+---
+
+### **3. Check if Netlify Function Exists:**
+
+Please verify file `netlify/functions/submit-inquiry.js` exists.
+
+**If it doesn't exist**, create it with this content:
+
+```javascript
+const { google } = require('googleapis');
+
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { 
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
+  }
+
+  try {
+    const formData = JSON.parse(event.body);
+
+    if (!formData.name || !formData.phone || !formData.email) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Missing required fields' })
+      };
+    }
+
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.SERVICE_ACCOUNT_EMAIL,
+        private_key: process.env.SERVICE_ACCOUNT_PRIVATE_KEY.replace(/\\n/g, '\n')
+      },
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const timestamp = new Date().toLocaleString('en-IN', { 
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range: 'Inquiries!A:J',
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: {
+        values: [[
+          timestamp,
+          formData.name,
+          formData.fatherName || '',
+          formData.phone,
+          formData.email,
+          formData.dob || '',
+          formData.courseInterest,
+          formData.college || '',
+          formData.branch || '',
+          'Pending'
+        ]]
+      }
+    });
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ 
+        success: true, 
+        message: 'Inquiry submitted successfully' 
+      })
+    };
+
+  } catch (error) {
+    console.error('Error submitting inquiry:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ 
+        error: 'Failed to submit inquiry',
+        details: error.message 
+      })
+    };
+  }
+};
+```
+
+---
+
+### **4. Check if Environment Variables are Set:**
+
+In Replit Secrets (Tools → Secrets), verify these exist:
+
+```
+VITE_GOOGLE_SHEET_ID=
+VITE_GOOGLE_API_KEY=
+VITE_ADMIN_PASSWORD=
+GOOGLE_SHEET_ID=
+SERVICE_ACCOUNT_EMAIL=
+SERVICE_ACCOUNT_PRIVATE_KEY=
+```
+
+**If they don't exist**, that's okay for now - I'll provide them after preview works.
+
+---
+
+### **5. Check `netlify.toml`:**
+
+Please confirm this file exists with:
+
+```toml
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+```
+
+---
+
+### **6. Fix PostCSS Warning (Optional):**
+
+The warning about PostCSS is harmless but if you want to fix it:
+
+Create or update `postcss.config.js`:
+
+```javascript
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+}
+```
+
+---
+
+## 🧪 **After Fixing Vite Config:**
+
+1. **Restart dev server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Check console output:** Should show:
+   ```
+   VITE v5.x.x ready in XXX ms
+   ➜  Local:   http://0.0.0.0:5173/
+   ➜  Network: use --host to expose
+   ```
+
+3. **Preview should work** - I should see the app in Replit webview
+
+---
+
+## 📊 **What I Expect to See:**
+
+Once preview works, I should see:
+
+**Home Page:**
+- Header with "Programmers Point" logo/name
+- Navigation (Home, Courses, Placements, Inquiries, Admin)
+- Hero section
+- "Start Your Journey" button (with proper margin)
+- Stats/features section
+
+**If I see this, we're good!** If not, tell me what's showing.
+
+---
+
+## ❓ **Questions for You:**
+
+1. **Did the project import from GitHub successfully?**
+   - YES / NO / NOT SURE
+
+2. **Can you see these files in the file explorer?**
+   - `client/src/App.jsx` or `App.tsx`
+   - `vite.config.js` or `vite.config.ts`
+   - `package.json`
+   - YES / NO / PARTIALLY
+
+3. **When you run `npm run dev`, does it start without errors?**
+   - YES / NO / ERROR (if error, paste it)
+
+4. **Is there a `server/` folder or any Express.js files?**
+   - If YES, we need to delete them (this should be frontend-only)
+
+---
+
+## 🎯 **Priority Actions:**
+
+**Please do these in order:**
+
+1. ✅ Fix `vite.config.js` (add the config I provided above)
+2. ✅ Run `npm install` to ensure all dependencies installed
+3. ✅ Restart dev server: `npm run dev`
+4. ✅ Tell me what you see in preview
+5. ✅ If preview works, confirm these pages exist:
+   - Home
+   - Course Explorer
+   - Placements
+   - Inquiry Form
+   - Admin Login
+
+---
+
+## 📝 **After Preview Works:**
+
+Once I can see the app, I need to verify:
+
+- ✅ All pages load without errors
+- ✅ Google Sheets integration is ready (will test after adding credentials)
+- ✅ Netlify Function exists and is correct
+- ✅ Security issue is fixed (private keys not in frontend)
+- ✅ Build works: `npm run build`
+- ✅ Ready for Netlify deployment
+
+---
+
+## ⏰ **Summary:**
+
+**Right now:** Preview is blocked by Vite config issue
+
+**Fix needed:** Update `vite.config.js` with the code I provided
+
+**After fix:** Preview should work, I can test the app
+
+**Then:** Verify all features work and confirm ready for deployment
+
+**Please fix the Vite config first and let me know what you see in the preview!**"
