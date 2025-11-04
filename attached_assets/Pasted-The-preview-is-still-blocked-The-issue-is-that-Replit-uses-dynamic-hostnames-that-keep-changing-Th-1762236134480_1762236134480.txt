@@ -1,0 +1,81 @@
+The preview is still blocked. The issue is that Replit uses dynamic hostnames that keep changing. The current vite config doesn't account for this.
+Error still showing:
+Blocked request. This host ("c8b40649-0ed9-445b-bfdd-c27dfea09a3e-00-3c9fmohw36jhs.spock.replit.dev") is not allowed.
+The fix you applied isn't working. Please update vite.config.ts with this COMPLETE configuration:
+typescriptimport { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5000,
+    strictPort: false,
+    allowedHosts: [
+      '.replit.dev',
+      '.repl.co'
+    ],
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss',
+      host: undefined
+    }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 5000,
+    strictPort: false
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false
+  }
+})
+Key changes:
+
+Added allowedHosts: ['.replit.dev', '.repl.co'] - This allows ALL Replit domains (with wildcard)
+Set hmr.host: undefined - Let Vite auto-detect the correct host
+Kept other HMR settings for WebSocket
+
+After updating, restart the dev server:
+bash# Stop server (Ctrl+C if running)
+npm run dev
+This should fix the preview permanently, even when Replit changes the hostname!"
+
+🔄 Alternative Solution (If Above Doesn't Work)
+If they say the above still doesn't work, send this:
+
+"If the previous fix didn't work, try this more aggressive configuration:
+typescriptimport { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: true, // Listen on all addresses
+    port: 5000,
+    strictPort: false,
+    watch: {
+      usePolling: true
+    }
+  },
+  preview: {
+    host: true,
+    port: 5000
+  },
+  build: {
+    outDir: 'dist'
+  }
+})
+This uses host: true which tells Vite to accept connections from any host. It's less restrictive but works reliably on Replit."
+
+🎯 Why This Keeps Happening
+Replit generates URLs like:
+
+c8b40649-0ed9-445b-bfdd-c27dfea09a3e-00-3c9fmohw36jhs.spock.replit.dev
+
+The random part (c8b40649...) changes, so you need a wildcard approach:
+
+allowedHosts: ['.replit.dev', '.repl.co'] → Accepts any subdomain
+OR host: true → Accepts everything
+
