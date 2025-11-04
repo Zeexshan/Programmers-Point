@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "programmers-point-app",
+  "private_key_id": "66957209b1b608dfd6a897f3859a0e45f9e9403b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDOUx7z8CZ65GYr\njMa4RAyELOfVLnI8nAhBNdexQpirjpPwPLhE+4XU7mep1tZGr3OwUM8lRhC9m3kn\nuADRrBm4pttB6iA+LII7X3B5071h7uCKFjUJrTv2x7uw5Fep3gQg3bLYVigMA0rj\nPEzXupkgeym9CRVFnoSVA8LW1piQKAqIF+wzehfqYzW9qvLdWr5A439cQYubGPtn\nOTECRyFtAtgb06BLTQazDg0t6OWJOdR0KBMk7yfh/sa7Fv/LPKoeK/qgA1qyw9LP\nR5baCDl/iGfcsc7ukKrFofAW4XHxW59byUyxJ7BEzNYqkdm3Iv54rEpyQrvSO7SL\n5hGInfOjAgMBAAECggEAAZtvJcpMmm92BkfR8nSBPnRVF/mFJUi33b4sIHLa2pdB\nOsFWVB87cyWqRA3q3GEYfxqaCnnJvphb8L3Dr95t0tzl31USDDnvh8PeDezi0ET6\nlcjHf/xL98elhCK7NhUHJjRj5MCDDljmN+/rz1BiSfj7ob/U3RZ3hOujFGZWiOTr\nXsZuWrNJIJIUn5+3riREIWkyZqlZm9DtaswZklOlLfD8wxFdO5jbEYwVuK1eyqNN\n8n55pNv3PSo8bnhm99YpsBop7u0i6TBcFWpNCuvxDnqkwis3NQR8meqf58S4wXw7\nGQe7GPiwyY8wtVJExxzQZxMJrNTWYmjHMlu3omMYNQKBgQDvAjIkY2g6+2D1rZvJ\nwoZR0k2mzeyjRi+ArOcMXgHFdFrgeoU0Vv+UgPklx0SyFbkkfq/GcETQ/TK4B5KK\ntG5NVcDyLyo1d9mD0aejVaTVfNRkMPt3y9eNbG54ARvpl0uWY6tf3lYBKjiIrJbw\nDWoRoeDUSy4txNh/kE2gIgfXfQKBgQDc/hld79fHcUlciz/muxN44UHxs1CCczua\ndVw8/+5Z7AkmfWNVKCkBqhtJzuapStXk9wNjWtjtRNdKxie3afv73c4OKZrLTdXc\nxMQUAEJN/FWed9K8UMLVb6dl1cVFDRgEUzgwK29EKmMGRxSwTehObkSxJBCvhumM\nK4dlkFghnwKBgQCUSpJ9zUegQNO52str9UuNfKQ9OEr4StWySpTYMYN71WOFH7+B\n5/CPXS44aFiQ/bVvlULOJl4sJMzRLbGYabZ+ORSLrwPLRN8qUGxohPzOkLLerx13\nCHxm/L3Vqyp8VijJ2HE9/B70fhOxiRPlQQ1sfzmVvkeakiWZkBj5n+OpqQKBgQC6\n3UGl5MCYrHpT/osyFs4IULDqJ63UIIwttz8fdWmeL7AtE6mCwEqsVaJtbr4sOFNV\nIGmFAbScLLG/UH8U4FFqT8uEvjld35sO6nLCVtW6C7x6GufexIt63sa1nWUJVmEQ\nhy3jzVZwVUcWb9RWoAnnB+adwtk5EuM42zXJ85wSEQKBgQC9GkiSxcH4gSJDwtVs\nc50HQN8rowAuXoUtakOBkzolGP1dy9TSObNBLKAkVax4jYnjbyYNhOzAAQ7ASCpg\nMbLGvyCExfwurzpjGtFp4jo5RMtOYV+o6tZQ01Q2gHKCpBHit9sIODQyXneWc3zJ\numDCAT20EobYjTXeIPS3wXBY7Q==\n-----END PRIVATE KEY-----\n",
+  "client_email": "programmers-point@programmers-point-app.iam.gserviceaccount.com",
+  "client_id": "108602484566786200862",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/programmers-point%40programmers-point-app.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
