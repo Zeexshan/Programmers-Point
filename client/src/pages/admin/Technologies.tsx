@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Edit, Search } from "lucide-react";
-import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
+import { fetchAllData, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { Technology } from "@/types";
 
@@ -107,16 +107,15 @@ export default function Technologies() {
         editingTech.description
       ]];
 
-      await updateSheet('Technologies', `A${techIndex + 2}:J${techIndex + 2}`, values);
+      // TODO: Implement Apps Script endpoint for updating technologies
+      // await updateSheet('Technologies', `A${techIndex + 2}:J${techIndex + 2}`, values);
       
-      clearCache();
-      await loadTechnologies();
-      
-      setEditingTech(null);
       toast({
-        title: "Success",
-        description: "Technology updated successfully",
+        title: "Feature Not Available",
+        description: "Editing technologies requires Google Apps Script setup. Please edit directly in the Google Sheet for now.",
+        variant: "destructive",
       });
+      setEditingTech(null);
     } catch (error: any) {
       console.error('Failed to update technology:', error);
       toast({

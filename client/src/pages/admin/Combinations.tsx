@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Edit } from "lucide-react";
-import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
+import { fetchAllData, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { Combination } from "@/types";
 
@@ -74,16 +74,15 @@ export default function Combinations() {
         editingCombo.popularityScore.toString()
       ]];
 
-      await updateSheet('Combinations', `A${comboIndex + 2}:H${comboIndex + 2}`, values);
+      // TODO: Implement Apps Script endpoint for updating combinations
+      // await updateSheet('Combinations', `A${comboIndex + 2}:H${comboIndex + 2}`, values);
       
-      clearCache();
-      await loadCombinations();
-      
-      setEditingCombo(null);
       toast({
-        title: "Success",
-        description: "Combination updated successfully",
+        title: "Feature Not Available",
+        description: "Editing combinations requires Google Apps Script setup. Please edit directly in the Google Sheet for now.",
+        variant: "destructive",
       });
+      setEditingCombo(null);
     } catch (error: any) {
       console.error('Failed to update combination:', error);
       toast({

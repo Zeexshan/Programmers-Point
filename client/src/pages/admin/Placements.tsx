@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Edit } from "lucide-react";
-import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
+import { fetchAllData, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { Placement, AllData } from "@/types";
 
@@ -95,16 +95,15 @@ export default function Placements() {
         editingPlacement.joiningDate
       ]];
 
-      await updateSheet('Placements', `A${placementIndex + 2}:I${placementIndex + 2}`, values);
+      // TODO: Implement Apps Script endpoint for updating placements
+      // await updateSheet('Placements', `A${placementIndex + 2}:I${placementIndex + 2}`, values);
       
-      clearCache();
-      await loadPlacements();
-      
-      setEditingPlacement(null);
       toast({
-        title: "Success",
-        description: "Placement updated successfully",
+        title: "Feature Not Available",
+        description: "Editing placements requires Google Apps Script setup. Please edit directly in the Google Sheet for now.",
+        variant: "destructive",
       });
+      setEditingPlacement(null);
     } catch (error: any) {
       console.error('Failed to update placement:', error);
       toast({

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Edit, Building2 } from "lucide-react";
-import { fetchAllData, updateSheet, clearCache } from "@/utils/googleSheets";
+import { fetchAllData, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { Company } from "@/types";
 
@@ -62,16 +62,15 @@ export default function Companies() {
         editingCompany.avgPackage
       ]];
 
-      await updateSheet('Companies', `A${companyIndex + 2}:D${companyIndex + 2}`, values);
+      // TODO: Implement Apps Script endpoint for updating companies
+      // await updateSheet('Companies', `A${companyIndex + 2}:D${companyIndex + 2}`, values);
       
-      clearCache();
-      await loadCompanies();
-      
-      setEditingCompany(null);
       toast({
-        title: "Success",
-        description: "Company updated successfully",
+        title: "Feature Not Available",
+        description: "Editing companies requires Google Apps Script setup. Please edit directly in the Google Sheet for now.",
+        variant: "destructive",
       });
+      setEditingCompany(null);
     } catch (error: any) {
       console.error('Failed to update company:', error);
       toast({
