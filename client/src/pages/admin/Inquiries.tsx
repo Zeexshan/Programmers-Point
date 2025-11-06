@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, Search } from "lucide-react";
-import { readInquiries, updateSheet, clearCache } from "@/utils/googleSheets";
+import { readInquiries, clearCache } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { Inquiry } from "@/types";
 
@@ -68,22 +68,35 @@ export default function Inquiries() {
   };
 
   const handleMarkAsJoined = async (index: number) => {
+    const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+
+    if (!APPS_SCRIPT_URL) {
+      toast({
+        title: "Configuration Error",
+        description: "Google Apps Script URL is not configured.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const inquiry = inquiries[index];
-      const values = [[
-        inquiry.timestamp,
-        inquiry.name,
-        inquiry.fatherName,
-        inquiry.phone,
-        inquiry.email,
-        inquiry.dob,
-        inquiry.courseInterest,
-        inquiry.college,
-        inquiry.branch,
-        'Joined'
-      ]];
-
-      await updateSheet('Inquiries', `A${index + 2}:J${index + 2}`, values);
+      
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'updateInquiryStatus',
+          data: {
+            phone: inquiry.phone,
+            timestamp: inquiry.timestamp,
+            status: 'Joined'
+          }
+        })
+      });
       
       clearCache();
       await loadInquiries();
