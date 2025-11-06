@@ -18,7 +18,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
-import { appendToInquiries, fetchAllData } from "@/utils/googleSheets";
+import { fetchAllData } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { InquiryFormData } from "@/types";
 
@@ -49,9 +49,6 @@ export default function InquiryForm() {
   const [courses, setCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  
-  // Check if we're in production (Netlify)
-  const isProduction = window.location.hostname.includes('netlify.app');
 
   useEffect(() => {
     loadCourses();
@@ -86,11 +83,12 @@ export default function InquiryForm() {
   });
 
   const onSubmit = async (data: InquiryFormData) => {
-    // Check if we're in production before allowing submission
-    if (!isProduction) {
+    const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+
+    if (!APPS_SCRIPT_URL) {
       toast({
-        title: "Form Disabled in Development",
-        description: "Inquiry form submissions only work on Netlify. Please explore Course Explorer and Placements sections!",
+        title: "Configuration Error",
+        description: "Google Apps Script URL is not configured. Please contact administrator.",
         variant: "destructive",
       });
       return;
@@ -99,19 +97,26 @@ export default function InquiryForm() {
     try {
       setIsSubmitting(true);
       
-      // Use Netlify Function in production
-      const response = await fetch('/.netlify/functions/submit-inquiry', {
+      const response = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          action: 'submitInquiry',
+          data: {
+            name: data.name,
+            fatherName: data.fatherName,
+            phone: data.phone,
+            email: data.email,
+            dob: data.dob,
+            courseInterest: data.courseInterest,
+            college: data.college,
+            branch: data.branch
+          }
+        })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Submission failed');
-      }
 
       setIsSuccess(true);
       form.reset({
@@ -203,25 +208,6 @@ export default function InquiryForm() {
           </p>
         </div>
 
-        {!isProduction && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 p-4 mb-6 rounded-md" data-testid="alert-form-disabled">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  <strong>Note:</strong> Inquiry form submissions are disabled in development mode. 
-                </p>
-                <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-400">
-                  Form submissions will work after deployment to Netlify. For now, please explore the <Link href="/courses" className="underline font-semibold">Course Explorer</Link> and <Link href="/placements" className="underline font-semibold">Placements</Link> sections.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <Card className="p-6 md:p-8">
           <Form {...form}>
