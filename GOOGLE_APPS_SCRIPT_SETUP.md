@@ -20,6 +20,7 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     
+    // Handle new inquiry submission
     if (data.action === 'submitInquiry') {
       const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inquiries');
       
@@ -40,6 +41,28 @@ function doPost(e) {
       
       return ContentService.createTextOutput(JSON.stringify({
         success: true
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Handle inquiry status update (Mark as Joined)
+    if (data.action === 'updateInquiryStatus') {
+      const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Inquiries');
+      const allData = sheet.getDataRange().getValues();
+      
+      // Find the row by phone and timestamp (columns D and A)
+      for (let i = 1; i < allData.length; i++) {
+        if (allData[i][3] === data.data.phone && allData[i][0] === data.data.timestamp) {
+          // Update status in column J (index 9)
+          sheet.getRange(i + 1, 10).setValue(data.data.status);
+          
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        error: 'Inquiry not found'
       })).setMimeType(ContentService.MimeType.JSON);
     }
     
