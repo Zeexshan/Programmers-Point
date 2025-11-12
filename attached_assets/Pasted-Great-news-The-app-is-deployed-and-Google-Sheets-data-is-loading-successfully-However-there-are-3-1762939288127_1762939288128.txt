@@ -1,0 +1,433 @@
+Great news! The app is deployed and Google Sheets data is loading successfully. However, there are 3 issues that need fixing:**
+
+---
+
+## 🔴 **ISSUE 1: Course Explorer Doesn't Look Like Infinite Craft**
+
+**Current Problem:**
+The course explorer doesn't have the drag-and-drop, card-merging interface like Infinite Craft game. It should feel interactive and game-like.
+
+**Required Design:**
+
+### **Visual Style (Like Infinite Craft):**
+
+```
+┌─────────────────────────────────────────────────┐
+│  Available Elements (Technologies)              │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐   │
+│  │ 💻    │ │ 🎨    │ │ ⚡    │ │ 🔧    │   │
+│  │HTML5  │ │CSS3   │ │React  │ │Node.js│   │
+│  │       │ │       │ │       │ │       │   │
+│  │[Drag] │ │[Drag] │ │[Drag] │ │[Drag] │   │
+│  └────────┘ └────────┘ └────────┘ └────────┘   │
+│                                                 │
+│  Workspace (Drop Zone)                          │
+│  ┌─────────────────────────────────────────┐   │
+│  │ Drop technologies here to combine       │   │
+│  │                                         │   │
+│  │   [React ✕]  [Node.js ✕]  [MongoDB ✕] │   │
+│  │                                         │   │
+│  │   ↓  ↓  ↓  Combining...                │   │
+│  │                                         │   │
+│  │   ┌─────────────────────────────────┐  │   │
+│  │   │ ✨ MERN Stack Developer         │  │   │
+│  │   │ 💰 Package: 8-15 LPA            │  │   │
+│  │   │ 📊 Vacancies: 2,500+            │  │   │
+│  │   │ 🏢 Companies: Flipkart, Swiggy  │  │   │
+│  │   └─────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────┘
+```
+
+### **Implementation Requirements:**
+
+**1. Technology Cards:**
+- Card-style design (not plain buttons)
+- Each card has:
+  - Icon/emoji for the technology
+  - Technology name
+  - Small tag showing category (Frontend/Backend/etc.)
+  - Subtle hover animation (lift effect)
+  - Click or drag to select
+
+**2. Workspace/Canvas:**
+- Large drop zone area
+- Visual indication when dragging over (highlight border)
+- Selected technologies appear as chips/cards
+- Each chip has X button to remove
+- Smooth animations when adding/removing
+
+**3. Result Card:**
+- Animated appearance (scale in, fade in)
+- Larger than technology cards
+- Gradient background
+- Shows:
+  - Job role (large, bold)
+  - Package range with money icon
+  - Vacancies with chart icon
+  - Companies with building icon
+  - Skills with graduation icon
+- "Learn This Stack" button
+
+**4. Infinite Craft-Style Features:**
+- **Smooth drag and drop** (or click to add for mobile)
+- **Visual feedback** - cards glow when selected
+- **Animation** when combining - show merge effect
+- **Particle effects** (optional) when creating a combination
+- **Color coding** by category:
+  - Frontend: Blue tones
+  - Backend: Green tones
+  - Database: Orange tones
+  - Other: Purple tones
+
+**5. Layout:**
+
+```jsx
+<div className="course-explorer">
+  {/* Left Panel: Available Technologies */}
+  <div className="technology-palette">
+    <h3>Build Your Stack</h3>
+    
+    {/* Grouped by category */}
+    <div className="tech-category">
+      <h4>🎨 Frontend</h4>
+      <div className="tech-grid">
+        {frontendTechs.map(tech => (
+          <TechnologyCard 
+            tech={tech}
+            onClick={() => selectTech(tech)}
+            selected={selected.includes(tech)}
+          />
+        ))}
+      </div>
+    </div>
+    
+    <div className="tech-category">
+      <h4>⚙️ Backend</h4>
+      {/* ... */}
+    </div>
+  </div>
+
+  {/* Right Panel: Workspace + Result */}
+  <div className="workspace">
+    <div className="drop-zone">
+      <p>Select or drag technologies to combine</p>
+      
+      <div className="selected-chips">
+        {selectedTechs.map(tech => (
+          <Chip 
+            label={tech.name}
+            onDelete={() => removeTech(tech)}
+            color={getCategoryColor(tech.category)}
+          />
+        ))}
+      </div>
+    </div>
+
+    {selectedTechs.length > 0 && (
+      <div className="result-card animate-scale-in">
+        <div className="result-header">
+          <h2>✨ {result.jobRole}</h2>
+          <span className="tech-count">{selectedTechs.length} technologies</span>
+        </div>
+        
+        <div className="result-stats">
+          {/* Stats grid */}
+        </div>
+        
+        <button className="learn-button">
+          🚀 Learn This Stack
+        </button>
+      </div>
+    )}
+  </div>
+</div>
+```
+
+**6. Styling (Tailwind + Custom):**
+
+```css
+/* Add these styles */
+.technology-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md;
+  @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+  @apply cursor-pointer border-2 border-transparent;
+}
+
+.technology-card.selected {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.drop-zone {
+  @apply border-2 border-dashed border-gray-300 rounded-xl p-8;
+  @apply min-h-[300px] bg-gray-50 dark:bg-gray-900;
+  @apply transition-colors duration-300;
+}
+
+.drop-zone.drag-over {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.result-card {
+  @apply bg-gradient-to-br from-purple-500 to-blue-600;
+  @apply text-white rounded-2xl p-6 shadow-2xl;
+  @apply transform transition-all duration-500;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+```
+
+**7. Mobile-Friendly:**
+- On mobile: Use click/tap instead of drag
+- Technology cards in scrollable horizontal lists
+- Result appears below workspace
+- All touch targets 48px minimum
+
+---
+
+## 🔴 **ISSUE 2: Admin Panel - Can't Mark Inquiries as "Joined"**
+
+**Current Problem:**
+In the admin panel, when viewing inquiries, there's no way to mark them as "Joined" status. The status needs to update in Google Sheets.
+
+**Required Fix:**
+
+### **In `client/src/pages/admin/Inquiries.tsx`:**
+
+**Add "Mark as Joined" functionality:**
+
+```typescript
+async function updateInquiryStatus(inquiryIndex: number, newStatus: 'Pending' | 'Joined') {
+  try {
+    setLoading(true);
+    
+    // Use Google Apps Script to update status
+    const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+    
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'updateInquiryStatus',
+        rowIndex: inquiryIndex + 2, // +2 because row 1 is header, array is 0-indexed
+        status: newStatus
+      })
+    });
+
+    // Refresh data
+    await loadInquiries();
+    
+    toast({
+      title: 'Success',
+      description: `Inquiry marked as ${newStatus}`,
+    });
+  } catch (error) {
+    toast({
+      title: 'Error',
+      description: 'Failed to update status',
+      variant: 'destructive'
+    });
+  } finally {
+    setLoading(false);
+  }
+}
+```
+
+**Update the UI to show action buttons:**
+
+```tsx
+<Table>
+  <TableHead>
+    <TableRow>
+      <TableHeader>Name</TableHeader>
+      <TableHeader>Phone</TableHeader>
+      <TableHeader>Email</TableHeader>
+      <TableHeader>Course</TableHeader>
+      <TableHeader>Status</TableHeader>
+      <TableHeader>Actions</TableHeader>
+    </TableRow>
+  </TableHead>
+  <TableBody>
+    {inquiries.map((inquiry, index) => (
+      <TableRow key={index}>
+        <TableCell>{inquiry.name}</TableCell>
+        <TableCell>{inquiry.phone}</TableCell>
+        <TableCell>{inquiry.email}</TableCell>
+        <TableCell>{inquiry.courseInterest}</TableCell>
+        <TableCell>
+          <span className={`px-2 py-1 rounded text-sm ${
+            inquiry.status === 'Joined' 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {inquiry.status}
+          </span>
+        </TableCell>
+        <TableCell>
+          {inquiry.status === 'Pending' && (
+            <button
+              onClick={() => updateInquiryStatus(index, 'Joined')}
+              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Mark as Joined
+            </button>
+          )}
+          {inquiry.status === 'Joined' && (
+            <button
+              onClick={() => updateInquiryStatus(index, 'Pending')}
+              className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Mark as Pending
+            </button>
+          )}
+        </TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+**Also update Google Apps Script** (I'll provide this code for the user):
+
+The Apps Script needs to handle the `updateInquiryStatus` action:
+
+```javascript
+function doPost(e) {
+  try {
+    const request = JSON.parse(e.postData.contents);
+    
+    if (request.action === 'updateInquiryStatus') {
+      const ss = SpreadsheetApp.openById('1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU');
+      const sheet = ss.getSheetByName('Inquiries');
+      
+      // Update status column (column J = 10)
+      sheet.getRange(request.rowIndex, 10).setValue(request.status);
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // ... rest of existing code
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+```
+
+---
+
+## 🔴 **ISSUE 3: Logos Not Showing**
+
+**Current Problem:**
+Company logos and other images are not displaying.
+
+**Possible Causes & Fixes:**
+
+### **Cause 1: Company Logo URLs are Invalid**
+
+**Check Google Sheet "Companies" tab:**
+- Column B should have logo URLs
+- URLs should be complete: `https://logo.clearbit.com/tcs.com`
+- NOT just: `tcs.com`
+
+**Fix in code:**
+
+```typescript
+// In CompanyCard component
+<img 
+  src={company.logoUrl || 'https://via.placeholder.com/100?text=' + company.name}
+  alt={company.name}
+  onError={(e) => {
+    // Fallback if logo fails to load
+    e.currentTarget.src = 'https://via.placeholder.com/100?text=' + company.name;
+  }}
+  className="h-16 w-16 object-contain"
+/>
+```
+
+### **Cause 2: Student Photos Not Loading**
+
+**Fix in StudentCard component:**
+
+```typescript
+<img 
+  src={student.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.studentName)}&size=150&background=random`}
+  alt={student.studentName}
+  onError={(e) => {
+    // Fallback to avatar generator
+    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.studentName)}&size=150`;
+  }}
+  className="w-24 h-24 rounded-full object-cover"
+/>
+```
+
+### **Cause 3: Institute Logo Not Showing**
+
+**Check if logo file exists:**
+
+```typescript
+// In Navbar component
+<img 
+  src="/logo.png"  // or wherever your logo is
+  alt="Programmers Point"
+  onError={(e) => {
+    // Fallback to text
+    e.currentTarget.style.display = 'none';
+    e.currentTarget.nextElementSibling.style.display = 'block';
+  }}
+  className="h-10"
+/>
+<span className="hidden font-bold text-xl">Programmers Point</span>
+```
+
+**If logo is in `public/` folder, ensure it's referenced correctly:**
+- ✅ `/logo.png` (if in `public/logo.png`)
+- ✅ `import logo from '/assets/logo.png'` (if in `src/assets`)
+- ❌ `./logo.png` (relative paths often fail after build)
+
+---
+
+## 📝 **Summary of Required Changes:**
+
+**Priority 1 (Most Important):**
+1. ✅ Redesign Course Explorer to match Infinite Craft style (card-based, drag-drop, animated)
+
+**Priority 2:**
+2. ✅ Add "Mark as Joined" button in Inquiries admin page
+3. ✅ Update Apps Script to handle status updates
+
+**Priority 3:**
+4. ✅ Fix image loading with fallbacks
+5. ✅ Add error handling for missing logos
+
+---
+
+**Please implement these changes. The course explorer redesign is the most important - it should feel like a game where you discover new career paths by combining technologies!**
+
+**After implementation, test:**
+- Course explorer drag-and-drop
+- Marking inquiries as joined (check Google Sheet updates)
+- All images load with fallbacks
+
+**Timeline?**"
+
+---
+
