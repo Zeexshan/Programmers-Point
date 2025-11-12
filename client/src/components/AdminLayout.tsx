@@ -13,6 +13,28 @@ import {
 import logoUrl from "@assets/logo_1761740236721.png";
 import { useState, useEffect } from "react";
 
+function LogoWithFallback({ className, testId }: { className?: string; testId?: string }) {
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  if (logoFailed) {
+    return (
+      <div className={className}>
+        <span className="text-xl font-bold text-primary">Programmers Point</span>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={logoUrl} 
+      alt="Admin" 
+      className={className}
+      data-testid={testId}
+      onError={() => setLogoFailed(true)}
+    />
+  );
+}
+
 const navItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/admin/inquiries", icon: Users, label: "Inquiries" },
@@ -42,7 +64,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <div className="md:hidden bg-card border-b px-4 py-3 flex items-center justify-between">
-        <img src={logoUrl} alt="Admin" className="h-10" />
+        <LogoWithFallback className="h-10" />
         <Button
           variant="ghost"
           size="icon"
@@ -63,7 +85,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="p-6 border-b hidden md:block">
-              <img src={logoUrl} alt="Admin" className="h-12" data-testid="img-admin-logo" />
+              <LogoWithFallback className="h-12" testId="img-admin-logo" />
               <p className="text-xs text-muted-foreground mt-2">Admin Panel</p>
             </div>
 

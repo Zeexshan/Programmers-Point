@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { X, Briefcase, TrendingUp, Building2, Sparkles, GraduationCap } from "lucide-react";
+import { X, Briefcase, TrendingUp, Building2, Sparkles, GraduationCap, Palette, Settings, Database, Bot, Code, DollarSign, Check, Target, Rocket, Gamepad2 } from "lucide-react";
 import { Link } from "wouter";
 import { fetchAllData } from "@/utils/googleSheets";
 import type { Technology, AllData } from "@/types";
@@ -32,14 +32,14 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
     return colors[category] || "from-gray-500/20 to-gray-600/20 border-gray-500/30";
   };
 
-  const getCategoryEmoji = (category: string) => {
-    const emojis: Record<string, string> = {
-      "Frontend": "🎨",
-      "Backend": "⚙️",
-      "Database": "💾",
-      "AI/ML": "🤖",
+  const getCategoryIcon = (category: string) => {
+    const icons: Record<string, ReactNode> = {
+      "Frontend": <Palette className="h-6 w-6" />,
+      "Backend": <Settings className="h-6 w-6" />,
+      "Database": <Database className="h-6 w-6" />,
+      "AI/ML": <Bot className="h-6 w-6" />,
     };
-    return emojis[category] || "💻";
+    return icons[category] || <Code className="h-6 w-6" />;
   };
 
   return (
@@ -58,7 +58,7 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
       data-testid={`card-technology-${tech.name.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-center gap-3">
-        <span className="text-3xl">{getCategoryEmoji(tech.mainCategory)}</span>
+        <div className="flex-shrink-0">{getCategoryIcon(tech.mainCategory)}</div>
         <div className="flex-1">
           <h3 className="font-bold text-sm" data-testid={`text-tech-name-${tech.name}`}>
             {tech.name}
@@ -66,12 +66,13 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
           <p className="text-xs text-muted-foreground">{tech.subCategory}</p>
         </div>
       </div>
-      <div className="mt-3 flex gap-2 text-xs">
-        <span className="bg-background/50 px-2 py-1 rounded">💰 {tech.fresherPackage}</span>
+      <div className="mt-3 flex gap-2 text-xs items-center">
+        <DollarSign className="h-3 w-3" />
+        <span className="bg-background/50 px-2 py-1 rounded">{tech.fresherPackage}</span>
       </div>
       {isSelected && (
         <div className="absolute top-1 right-1">
-          <Badge variant="default" className="text-xs">✓</Badge>
+          <Badge variant="default" className="text-xs"><Check className="h-3 w-3" /></Badge>
         </div>
       )}
     </div>
@@ -103,9 +104,19 @@ function DropZone({
       data-testid="drop-zone"
     >
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold mb-2">
-          {selectedTechs.length === 0 ? '🎯 Drop Technologies Here' : '✨ Your Stack'}
-        </h3>
+        <div className="flex items-center justify-center gap-2 mb-2">
+          {selectedTechs.length === 0 ? (
+            <>
+              <Target className="h-5 w-5" />
+              <h3 className="text-xl font-bold">Drop Technologies Here</h3>
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-5 w-5" />
+              <h3 className="text-xl font-bold">Your Stack</h3>
+            </>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           {selectedTechs.length === 0 
             ? 'Click or drag technologies to combine them' 
@@ -149,18 +160,19 @@ function ResultCard({ result }: { result: any }) {
           {/* Header */}
           <div>
             {result.type === 'exact' && (
-              <Badge className="text-lg px-4 py-2 bg-green-600 hover:bg-green-700 mb-4">
-                🎯 Perfect Match!
+              <Badge className="text-lg px-4 py-2 bg-green-600 hover:bg-green-700 mb-4 flex items-center gap-2 w-fit mx-auto">
+                <Target className="h-4 w-4" />
+                Perfect Match!
               </Badge>
             )}
             {result.type === 'calculated' && (
-              <Badge className="text-lg px-4 py-2 mb-4">
-                <Sparkles className="h-4 w-4 mr-2" />
+              <Badge className="text-lg px-4 py-2 mb-4 flex items-center gap-2 w-fit mx-auto">
+                <Sparkles className="h-4 w-4" />
                 Custom Combination
               </Badge>
             )}
             <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-job-role">
-              ✨ {result.title}
+              {result.title}
             </h2>
             <p className="text-sm text-muted-foreground">
               Combining {result.techCount} {result.techCount === 1 ? 'technology' : 'technologies'}
@@ -175,11 +187,13 @@ function ResultCard({ result }: { result: any }) {
                 <TrendingUp className="h-10 w-10 mb-3 text-green-600 mx-auto" />
                 <p className="text-sm text-muted-foreground mb-3">Package Range</p>
                 <div className="space-y-1">
-                  <p className="text-lg font-bold text-green-600" data-testid="text-fresher-package">
-                    💰 Fresher: {result.fresherPackage}
+                  <p className="text-lg font-bold text-green-600 flex items-center gap-2 justify-center" data-testid="text-fresher-package">
+                    <DollarSign className="h-5 w-5" />
+                    Fresher: {result.fresherPackage}
                   </p>
-                  <p className="text-lg font-bold text-green-700" data-testid="text-experienced-package">
-                    💼 Experienced: {result.experiencedPackage}
+                  <p className="text-lg font-bold text-green-700 flex items-center gap-2 justify-center" data-testid="text-experienced-package">
+                    <Briefcase className="h-5 w-5" />
+                    Experienced: {result.experiencedPackage}
                   </p>
                 </div>
               </CardContent>
@@ -204,8 +218,9 @@ function ResultCard({ result }: { result: any }) {
                   <p className="text-sm text-muted-foreground mb-3">Top Hiring Companies</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {result.companies.map((company: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-sm bg-background/50">
-                        🏢 {company}
+                      <Badge key={i} variant="outline" className="text-sm bg-background/50 flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        {company}
                       </Badge>
                     ))}
                   </div>
@@ -222,8 +237,8 @@ function ResultCard({ result }: { result: any }) {
                 className="text-lg px-8 py-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 data-testid="button-learn-stack"
               >
-                <GraduationCap className="mr-2 h-5 w-5" />
-                🚀 Learn This Stack
+                <Rocket className="mr-2 h-5 w-5" />
+                Learn This Stack
               </Button>
             </Link>
           </div>
@@ -289,9 +304,9 @@ export default function CourseExplorer() {
     }
 
     const totalVacancies = selectedTechs.reduce((sum, tech) => sum + tech.vacancies, 0);
-    const allCompanies = [...new Set(
+    const allCompanies = Array.from(new Set(
       selectedTechs.flatMap(tech => tech.topCompanies.split(',').map(c => c.trim()))
-    )].slice(0, 8);
+    )).slice(0, 8);
 
     setResult({
       type: 'calculated',
@@ -363,9 +378,12 @@ export default function CourseExplorer() {
       <div className="container max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-page-title">
-            🎮 Build Your Tech Stack
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Gamepad2 className="h-10 w-10 text-purple-600" />
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-page-title">
+              Build Your Tech Stack
+            </h1>
+          </div>
           <p className="text-lg text-muted-foreground">
             Combine technologies like Infinite Craft to discover career paths
           </p>
@@ -376,7 +394,10 @@ export default function CourseExplorer() {
             {/* Left Panel: Technology Palette */}
             <div className="space-y-6 lg:max-h-[calc(100vh-300px)] lg:overflow-y-auto lg:pr-4 scrollbar-thin">
               <Card className="p-6 sticky top-0 bg-card/95 backdrop-blur z-10">
-                <h2 className="text-2xl font-bold mb-2">🧩 Available Technologies</h2>
+                <div className="flex items-center gap-2 mb-2">
+                  <Code className="h-6 w-6 text-primary" />
+                  <h2 className="text-2xl font-bold">Available Technologies</h2>
+                </div>
                 <p className="text-sm text-muted-foreground">Click or drag to add</p>
               </Card>
 

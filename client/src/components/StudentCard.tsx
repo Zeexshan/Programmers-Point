@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, User } from "lucide-react";
+import { Phone, User, DollarSign } from "lucide-react";
 import { useState } from "react";
 import type { Placement } from "@/types";
 
@@ -28,6 +28,9 @@ export function StudentCard({ placement }: StudentCardProps) {
               alt={placement.studentName}
               className="h-24 w-24 rounded-lg object-cover mx-auto md:mx-0"
               data-testid="img-student-photo"
+              onError={(e) => {
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(placement.studentName)}&size=150&background=random`;
+              }}
             />
           ) : (
             <div className="h-24 w-24 rounded-lg bg-primary/10 flex items-center justify-center mx-auto md:mx-0">
@@ -47,8 +50,9 @@ export function StudentCard({ placement }: StudentCardProps) {
               <p data-testid="text-profile">
                 <span className="font-semibold">Profile:</span> {placement.profile}
               </p>
-              <p data-testid="text-package" className="text-primary font-semibold">
-                💰 Package: {placement.package}
+              <p data-testid="text-package" className="text-primary font-semibold flex items-center gap-1 justify-center md:justify-start">
+                <DollarSign className="h-4 w-4" />
+                Package: {placement.package}
               </p>
               <p data-testid="text-course">
                 <span className="font-semibold">Course:</span> {placement.course}
@@ -60,7 +64,7 @@ export function StudentCard({ placement }: StudentCardProps) {
                 </span>
                 {!phoneRevealed && (
                   <Button
-                    variant="link"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setPhoneRevealed(true)}
                     className="h-auto p-0"

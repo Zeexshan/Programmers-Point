@@ -6,6 +6,7 @@ import logoUrl from "@assets/logo_1761740236721.png";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -20,8 +21,16 @@ export function Navbar() {
       <div className="container mx-auto px-6 py-5">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-3" data-testid="link-home">
-            <img src={logoUrl} alt="Programmers Point" className="h-12" data-testid="img-logo" />
-            <span className="text-xl font-bold text-primary hidden sm:inline">
+            {!logoFailed && (
+              <img 
+                src={logoUrl} 
+                alt="Programmers Point" 
+                className="h-12" 
+                data-testid="img-logo"
+                onError={() => setLogoFailed(true)}
+              />
+            )}
+            <span className="text-xl font-bold text-primary">
               Programmers Point
             </span>
           </Link>

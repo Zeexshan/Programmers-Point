@@ -10,6 +10,28 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/logo_1761740236721.png";
 
+function LogoWithFallback() {
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  if (logoFailed) {
+    return (
+      <div className="h-16 mb-4">
+        <span className="text-2xl font-bold text-primary">Programmers Point</span>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={logoUrl} 
+      alt="Programmers Point" 
+      className="h-16 mx-auto mb-4" 
+      data-testid="img-admin-logo"
+      onError={() => setLogoFailed(true)}
+    />
+  );
+}
+
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
@@ -57,7 +79,7 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <img src={logoUrl} alt="Programmers Point" className="h-16 mx-auto mb-4" data-testid="img-admin-logo" />
+          <LogoWithFallback />
           <h1 className="text-2xl font-bold" data-testid="text-login-title">Admin Login</h1>
           <p className="text-muted-foreground mt-2">Enter your credentials to access the admin panel</p>
         </div>
