@@ -1,0 +1,128 @@
+12:10:48 PM: Build ready to start
+12:10:50 PM: build-image version: 0885bcbb999ebd19472160b218ceb07f99c4e7d1 (noble)
+12:10:50 PM: buildbot version: 1049fb5a2bbbd0b9929a4139d52a218b72b00555
+12:10:50 PM: Fetching cached dependencies
+12:10:50 PM: Failed to fetch cache, continuing with build
+12:10:50 PM: Starting to prepare the repo for build
+12:10:50 PM: No cached dependencies found. Cloning fresh repo
+12:10:50 PM: git clone --filter=blob:none https://github.com/Zeexshan/Programmers-Point
+12:10:50 PM: Preparing Git Reference refs/heads/main
+12:10:53 PM: Starting to install dependencies
+12:10:54 PM: v22.21.1 is already installed.
+12:10:54 PM: Now using node v22.21.1 (npm v10.9.4)
+12:10:54 PM: Enabling Node.js Corepack
+12:10:54 PM: Started restoring cached build plugins
+12:10:54 PM: Finished restoring cached build plugins
+12:10:54 PM: Started restoring cached corepack dependencies
+12:10:54 PM: Finished restoring cached corepack dependencies
+12:10:54 PM: No npm workspaces detected
+12:10:54 PM: Started restoring cached node modules
+12:10:54 PM: Finished restoring cached node modules
+12:10:54 PM: Installing npm packages using npm version 10.9.4
+12:11:01 PM: npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+12:11:01 PM: added 387 packages in 7s
+12:11:01 PM: npm packages installed
+12:11:02 PM: Successfully installed dependencies
+12:11:02 PM: Starting build script
+12:11:02 PM: Detected 1 framework(s)
+12:11:02 PM: "vite" at version "5.4.20"
+12:11:02 PM: Section completed: initializing
+12:11:04 PM: ​
+12:11:04 PM: Netlify Build                                                 
+12:11:04 PM: ────────────────────────────────────────────────────────────────
+12:11:04 PM: ​
+12:11:04 PM: ❯ Version
+12:11:04 PM:   @netlify/build 35.3.1
+12:11:04 PM: ​
+12:11:04 PM: ❯ Flags
+12:11:04 PM:   accountId: 6527d0104918242d29cdbd71
+12:11:04 PM:   baseRelDir: true
+12:11:04 PM:   buildId: 690c42f03f96f318ca7d514b
+12:11:04 PM:   deployId: 690c42f03f96f318ca7d514d
+12:11:04 PM: ​
+12:11:04 PM: ❯ Current directory
+12:11:04 PM:   /opt/build/repo
+12:11:04 PM: ​
+12:11:04 PM: ❯ Config file
+12:11:04 PM:   /opt/build/repo/netlify.toml
+12:11:04 PM: ​
+12:11:04 PM: ❯ Context
+12:11:04 PM:   production
+12:11:04 PM: ​
+12:11:04 PM: build.command from netlify.toml                               
+12:11:04 PM: ────────────────────────────────────────────────────────────────
+12:11:04 PM: ​
+12:11:04 PM: $ npm ci && npm run build
+12:11:10 PM: npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+12:11:10 PM: added 387 packages, and audited 388 packages in 6s
+12:11:10 PM: 66 packages are looking for funding
+12:11:10 PM:   run `npm fund` for details
+12:11:10 PM: 3 vulnerabilities (1 low, 2 moderate)
+12:11:10 PM: To address all issues, run:
+12:11:10 PM:   npm audit fix
+12:11:10 PM: Run `npm audit` for details.
+12:11:10 PM: > programmers-point-app@1.0.0 build
+12:11:10 PM: > vite build
+12:11:10 PM: vite v5.4.20 building for production...
+12:11:10 PM: transforming...
+12:11:12 PM: A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 1738 modules transformed.
+12:11:12 PM: x Build failed in 2.52s
+12:11:12 PM: error during build:
+12:11:12 PM: client/src/pages/admin/Inquiries.tsx (15:24): "updateSheet" is not exported by "client/src/utils/googleSheets.ts", imported by "client/src/pages/admin/Inquiries.tsx".
+12:11:12 PM: file: /opt/build/repo/client/src/pages/admin/Inquiries.tsx:15:24
+12:11:12 PM: 
+12:11:12 PM: 13: } from "@/components/ui/select";
+12:11:12 PM: 14: import { Download, Search } from "lucide-react";
+12:11:12 PM: 15: import { readInquiries, updateSheet, clearCache } from "@/utils/googleSheets";
+12:11:12 PM:                             ^
+12:11:12 PM: 16: import { useToast } from "@/hooks/use-toast";
+12:11:12 PM: 17: import type { Inquiry } from "@/types";
+12:11:12 PM: 
+12:11:12 PM:     at getRollupError (file:///opt/build/repo/node_modules/rollup/dist/es/shared/parseAst.js:396:41)
+12:11:12 PM:     at error (file:///opt/build/repo/node_modules/rollup/dist/es/shared/parseAst.js:392:42)
+12:11:12 PM:     at Module.error (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:15588:16)
+12:11:12 PM:     at Module.traceVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:16037:29)
+12:11:12 PM:     at ModuleScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:13820:39)
+12:11:12 PM:     at FunctionScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+12:11:12 PM:     at FunctionBodyScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+12:11:12 PM:     at ReturnValueScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+12:11:12 PM:     at FunctionBodyScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+12:11:12 PM:     at BlockScope.findVariable (file:///opt/build/repo/node_modules/rollup/dist/es/shared/node-entry.js:5283:38)
+12:11:13 PM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+12:11:13 PM: ​
+12:11:13 PM: "build.command" failed                                        
+12:11:13 PM: ────────────────────────────────────────────────────────────────
+12:11:13 PM: ​
+12:11:13 PM:   Error message
+12:11:13 PM:   Command failed with exit code 1: npm ci && npm run build (https://ntl.fyi/exit-code-1)
+12:11:13 PM: ​
+12:11:13 PM:   Error location
+12:11:13 PM:   In build.command from netlify.toml:
+12:11:13 PM:   npm ci && npm run build
+12:11:13 PM: ​
+12:11:13 PM:   Resolved config
+12:11:13 PM:   build:
+12:11:13 PM:     command: npm ci && npm run build
+12:11:13 PM:     commandOrigin: config
+12:11:13 PM:     environment:
+12:11:13 PM:       - VITE_APPS_SCRIPT_URL
+12:11:13 PM:       - VITE_GOOGLE_API_KEY
+12:11:13 PM:       - VITE_GOOGLE_SHEET_ID
+12:11:13 PM:     publish: /opt/build/repo/dist
+12:11:13 PM:     publishOrigin: config
+12:11:13 PM:   headers:
+12:11:13 PM:     - for: /*
+      values:
+        X-Content-Type-Options: nosniff
+        X-Frame-Options: DENY
+        X-XSS-Protection: 1; mode=block
+  headersOrigin: config
+  redirects:
+    - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+12:11:13 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+12:11:13 PM: Failing build: Failed to build site
+12:11:13 PM: Finished processing build request in 23.443s
