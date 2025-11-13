@@ -1,0 +1,41 @@
+manifest.json:1 Manifest: Line: 1, column: 1, Syntax error.
+index-NKnNicV7.js:303 Fetching data from Google Sheets...
+index-NKnNicV7.js:303 Sheet ID: Set
+index-NKnNicV7.js:303 API Key: Set
+sheets.googleapis.com/v4/spreadsheets/1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU/values/Combinations!A2:H?key=AQ.Ab8RN6K983RwlQ4KAKbapVZ1oHruFo4_padtss09M2ZA2WFspw:1  Failed to load resource: the server responded with a status of 401 ()
+index-NKnNicV7.js:303 Google Sheets API Error: Object
+Bi @ index-NKnNicV7.js:303
+index-NKnNicV7.js:303 Error reading Combinations: Error: API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication
+    at Bi (index-NKnNicV7.js:303:26671)
+    at async Promise.all (index 1)
+    at async Cs (index-NKnNicV7.js:303:27040)
+    at async d (index-NKnNicV7.js:317:4764)
+Bi @ index-NKnNicV7.js:303
+sheets.googleapis.com/v4/spreadsheets/1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU/values/Technologies!A2:J?key=AQ.Ab8RN6K983RwlQ4KAKbapVZ1oHruFo4_padtss09M2ZA2WFspw:1  Failed to load resource: the server responded with a status of 401 ()
+index-NKnNicV7.js:303 Google Sheets API Error: Object
+Bi @ index-NKnNicV7.js:303
+index-NKnNicV7.js:303 Error reading Technologies: Error: API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication
+    at Bi (index-NKnNicV7.js:303:26671)
+    at async Promise.all (index 0)
+    at async Cs (index-NKnNicV7.js:303:27040)
+    at async d (index-NKnNicV7.js:317:4764)
+Bi @ index-NKnNicV7.js:303
+sheets.googleapis.com/v4/spreadsheets/1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU/values/Placements!A2:I?key=AQ.Ab8RN6K983RwlQ4KAKbapVZ1oHruFo4_padtss09M2ZA2WFspw:1  Failed to load resource: the server responded with a status of 401 ()
+index-NKnNicV7.js:303 Google Sheets API Error: Object
+Bi @ index-NKnNicV7.js:303
+index-NKnNicV7.js:303 Error reading Placements: Error: API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication
+    at Bi (index-NKnNicV7.js:303:26671)
+    at async Promise.all (index 3)
+    at async Cs (index-NKnNicV7.js:303:27040)
+    at async d (index-NKnNicV7.js:317:4764)
+Bi @ index-NKnNicV7.js:303
+sheets.googleapis.com/v4/spreadsheets/1q1mo556ComV_PkDb14wmZcP6Tv__aB6Q2qCfhElmFaU/values/Companies!A2:D?key=AQ.Ab8RN6K983RwlQ4KAKbapVZ1oHruFo4_padtss09M2ZA2WFspw:1  Failed to load resource: the server responded with a status of 401 ()
+index-NKnNicV7.js:303 Google Sheets API Error: Object
+Bi @ index-NKnNicV7.js:303
+index-NKnNicV7.js:303 Error reading Companies: Error: API keys are not supported by this API. Expected OAuth2 access token or other authentication credentials that assert a principal. See https://cloud.google.com/docs/authentication
+    at Bi (index-NKnNicV7.js:303:26671)
+    at async Promise.all (index 2)
+    at async Cs (index-NKnNicV7.js:303:27040)
+    at async d (index-NKnNicV7.js:317:4764)
+Bi @ index-NKnNicV7.js:303
+index-NKnNicV7.js:303 Data fetched: Object
