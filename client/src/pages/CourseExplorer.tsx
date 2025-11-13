@@ -34,12 +34,12 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, ReactNode> = {
-      "Frontend": <Palette className="h-6 w-6" />,
-      "Backend": <Settings className="h-6 w-6" />,
-      "Database": <Database className="h-6 w-6" />,
-      "AI/ML": <Bot className="h-6 w-6" />,
+      "Frontend": <Palette className="h-5 w-5" />,
+      "Backend": <Settings className="h-5 w-5" />,
+      "Database": <Database className="h-5 w-5" />,
+      "AI/ML": <Bot className="h-5 w-5" />,
     };
-    return icons[category] || <Code className="h-6 w-6" />;
+    return icons[category] || <Code className="h-5 w-5" />;
   };
 
   return (
@@ -50,29 +50,29 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
       {...attributes}
       className={`
         relative bg-gradient-to-br ${getCategoryColor(tech.mainCategory)}
-        border-2 rounded-lg p-4 cursor-grab active:cursor-grabbing
-        transition-all duration-300 hover:shadow-xl hover:-translate-y-1
-        ${isSelected ? 'ring-2 ring-primary scale-95' : ''}
+        border-2 rounded-md p-3 cursor-grab active:cursor-grabbing
+        transition-all duration-200 hover-elevate
+        ${isSelected ? 'ring-2 ring-primary' : ''}
         ${isDragging ? 'opacity-50' : ''}
       `}
       data-testid={`card-technology-${tech.name.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 mb-2">
         <div className="flex-shrink-0">{getCategoryIcon(tech.mainCategory)}</div>
-        <div className="flex-1">
-          <h3 className="font-bold text-sm" data-testid={`text-tech-name-${tech.name}`}>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm truncate" data-testid={`text-tech-name-${tech.name}`}>
             {tech.name}
           </h3>
-          <p className="text-xs text-muted-foreground">{tech.subCategory}</p>
+          <p className="text-xs text-muted-foreground truncate">{tech.subCategory}</p>
         </div>
       </div>
-      <div className="mt-3 flex gap-2 text-xs items-center">
+      <div className="flex gap-1 text-xs items-center">
         <DollarSign className="h-3 w-3" />
-        <span className="bg-background/50 px-2 py-1 rounded">{tech.fresherPackage}</span>
+        <span className="bg-background/50 px-2 py-0.5 rounded text-xs">{tech.fresherPackage}</span>
       </div>
       {isSelected && (
         <div className="absolute top-1 right-1">
-          <Badge variant="default" className="text-xs"><Check className="h-3 w-3" /></Badge>
+          <Badge variant="default" className="h-5 w-5 p-0 flex items-center justify-center"><Check className="h-3 w-3" /></Badge>
         </div>
       )}
     </div>
@@ -94,26 +94,26 @@ function DropZone({
     <div
       ref={setNodeRef}
       className={`
-        border-4 border-dashed rounded-2xl p-8 min-h-[300px]
+        border-4 border-dashed rounded-xl p-6 min-h-[200px]
         transition-all duration-300
         ${isOver 
-          ? 'border-primary bg-primary/10 scale-[1.02]' 
+          ? 'border-primary bg-primary/10 scale-[1.01]' 
           : 'border-muted-foreground/30 bg-muted/30'
         }
       `}
       data-testid="drop-zone"
     >
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2 mb-2">
           {selectedTechs.length === 0 ? (
             <>
               <Target className="h-5 w-5" />
-              <h3 className="text-xl font-bold">Drop Technologies Here</h3>
+              <h3 className="text-lg font-bold">Drop Technologies Here</h3>
             </>
           ) : (
             <>
               <Sparkles className="h-5 w-5" />
-              <h3 className="text-xl font-bold">Your Stack</h3>
+              <h3 className="text-lg font-bold">Your Stack</h3>
             </>
           )}
         </div>
@@ -126,14 +126,14 @@ function DropZone({
       </div>
 
       {selectedTechs.length > 0 && (
-        <div className="flex flex-wrap gap-3 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center">
           {selectedTechs.map((tech) => (
             <div
               key={tech.name}
-              className="group relative bg-card border-2 border-primary/50 rounded-lg px-4 py-2 shadow-lg animate-scale-in"
+              className="group relative bg-card border-2 border-primary/50 rounded-md px-3 py-2 shadow-lg animate-scale-in"
               data-testid={`selected-chip-${tech.name.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              <span className="font-semibold">{tech.name}</span>
+              <span className="font-semibold text-sm">{tech.name}</span>
               <button
                 onClick={() => onRemove(tech.name)}
                 className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
@@ -152,26 +152,26 @@ function DropZone({
 function ResultCard({ result }: { result: any }) {
   return (
     <Card 
-      className="mt-8 overflow-hidden animate-scale-in bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-pink-500/10 border-2 border-purple-500/30"
+      className="mt-6 overflow-hidden animate-scale-in bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-pink-500/10 border-2 border-purple-500/30"
       data-testid="result-card"
     >
-      <CardContent className="p-8">
-        <div className="text-center space-y-6">
+      <CardContent className="p-6">
+        <div className="text-center space-y-4">
           {/* Header */}
           <div>
             {result.type === 'exact' && (
-              <Badge className="text-lg px-4 py-2 bg-green-600 hover:bg-green-700 mb-4 flex items-center gap-2 w-fit mx-auto">
+              <Badge className="text-base px-3 py-1 bg-green-600 hover:bg-green-700 mb-3 flex items-center gap-2 w-fit mx-auto">
                 <Target className="h-4 w-4" />
                 Perfect Match!
               </Badge>
             )}
             {result.type === 'calculated' && (
-              <Badge className="text-lg px-4 py-2 mb-4 flex items-center gap-2 w-fit mx-auto">
+              <Badge className="text-base px-3 py-1 mb-3 flex items-center gap-2 w-fit mx-auto">
                 <Sparkles className="h-4 w-4" />
                 Custom Combination
               </Badge>
             )}
-            <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-job-role">
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-job-role">
               {result.title}
             </h2>
             <p className="text-sm text-muted-foreground">
@@ -180,19 +180,19 @@ function ResultCard({ result }: { result: any }) {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-3 max-w-2xl mx-auto">
             {/* Package Card */}
             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-500/30">
-              <CardContent className="p-6">
-                <TrendingUp className="h-10 w-10 mb-3 text-green-600 mx-auto" />
-                <p className="text-sm text-muted-foreground mb-3">Package Range</p>
+              <CardContent className="p-4">
+                <TrendingUp className="h-8 w-8 mb-2 text-green-600 mx-auto" />
+                <p className="text-xs text-muted-foreground mb-2">Package Range</p>
                 <div className="space-y-1">
-                  <p className="text-lg font-bold text-green-600 flex items-center gap-2 justify-center" data-testid="text-fresher-package">
-                    <DollarSign className="h-5 w-5" />
+                  <p className="text-sm font-bold text-green-600 flex items-center gap-1 justify-center" data-testid="text-fresher-package">
+                    <DollarSign className="h-4 w-4" />
                     Fresher: {result.fresherPackage}
                   </p>
-                  <p className="text-lg font-bold text-green-700 flex items-center gap-2 justify-center" data-testid="text-experienced-package">
-                    <Briefcase className="h-5 w-5" />
+                  <p className="text-sm font-bold text-green-700 flex items-center gap-1 justify-center" data-testid="text-experienced-package">
+                    <Briefcase className="h-4 w-4" />
                     Experienced: {result.experiencedPackage}
                   </p>
                 </div>
@@ -201,10 +201,10 @@ function ResultCard({ result }: { result: any }) {
 
             {/* Vacancies Card */}
             <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-500/30">
-              <CardContent className="p-6">
-                <Briefcase className="h-10 w-10 mb-3 text-blue-600 mx-auto" />
-                <p className="text-sm text-muted-foreground mb-3">Total Vacancies</p>
-                <p className="text-3xl font-bold text-blue-600" data-testid="text-vacancies">
+              <CardContent className="p-4">
+                <Briefcase className="h-8 w-8 mb-2 text-blue-600 mx-auto" />
+                <p className="text-xs text-muted-foreground mb-2">Total Vacancies</p>
+                <p className="text-2xl font-bold text-blue-600" data-testid="text-vacancies">
                   {result.vacancies.toLocaleString()}+
                 </p>
               </CardContent>
@@ -213,12 +213,12 @@ function ResultCard({ result }: { result: any }) {
             {/* Companies Card */}
             {result.companies.length > 0 && (
               <Card className="md:col-span-2 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-500/30">
-                <CardContent className="p-6">
-                  <Building2 className="h-10 w-10 mb-3 text-purple-600 mx-auto" />
-                  <p className="text-sm text-muted-foreground mb-3">Top Hiring Companies</p>
+                <CardContent className="p-4">
+                  <Building2 className="h-8 w-8 mb-2 text-purple-600 mx-auto" />
+                  <p className="text-xs text-muted-foreground mb-2">Top Hiring Companies</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {result.companies.map((company: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-sm bg-background/50 flex items-center gap-1">
+                      <Badge key={i} variant="outline" className="text-xs bg-background/50 flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
                         {company}
                       </Badge>
@@ -230,11 +230,11 @@ function ResultCard({ result }: { result: any }) {
           </div>
 
           {/* Action Button */}
-          <div className="pt-4">
-            <Link href="/inquiry">
+          <div className="pt-2">
+            <Link href={`/inquiry?course=${encodeURIComponent(result.title)}`}>
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                className="text-base px-6 py-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 data-testid="button-learn-stack"
               >
                 <Rocket className="mr-2 h-5 w-5" />
@@ -371,81 +371,102 @@ export default function CourseExplorer() {
     ? allData?.technologies.find(t => t.name === activeDragId)
     : null;
 
+  const getCategoryHeaderColor = (category: string) => {
+    const colors: Record<string, string> = {
+      "Frontend": "from-blue-600 to-blue-700",
+      "Backend": "from-green-600 to-green-700",
+      "Database": "from-orange-600 to-orange-700",
+      "AI/ML": "from-purple-600 to-purple-700",
+    };
+    return colors[category] || "from-gray-600 to-gray-700";
+  };
+
+  const getCategoryBgColor = (category: string) => {
+    const colors: Record<string, string> = {
+      "Frontend": "bg-blue-500/5",
+      "Backend": "bg-green-500/5",
+      "Database": "bg-orange-500/5",
+      "AI/ML": "bg-purple-500/5",
+    };
+    return colors[category] || "bg-gray-500/5";
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <div className="container max-w-7xl mx-auto px-4 md:px-8 py-12 flex-1">
+      <div className="container max-w-7xl mx-auto px-4 md:px-6 py-8 flex-1">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-3 mb-3">
             <Gamepad2 className="h-10 w-10 text-purple-600" />
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-page-title">
               Build Your Tech Stack
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Combine technologies like Infinite Craft to discover career paths
           </p>
         </div>
 
         <DndContext onDragEnd={handleDragEnd} onDragStart={(e) => setActiveDragId(e.active.id as string)}>
-          <div className="grid lg:grid-cols-[350px_1fr] gap-8">
-            {/* Left Panel: Technology Palette */}
-            <div className="space-y-6 lg:max-h-[calc(100vh-300px)] lg:overflow-y-auto lg:pr-4 scrollbar-thin">
-              <Card className="p-6 sticky top-0 bg-card/95 backdrop-blur z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Code className="h-6 w-6 text-primary" />
-                  <h2 className="text-2xl font-bold">Available Technologies</h2>
-                </div>
-                <p className="text-sm text-muted-foreground">Click or drag to add</p>
-              </Card>
+          {/* Drop Zone */}
+          <div className="mb-6">
+            <DropZone 
+              selectedTechs={selectedTechs} 
+              onRemove={removeTech}
+            />
+          </div>
 
-              {Object.entries(groupedTechs).map(([mainCategory, subCategories]) => (
-                <div key={mainCategory} className="space-y-4">
-                  <h3 className="text-xl font-bold text-primary px-2">
-                    {mainCategory}
-                  </h3>
-                  {Object.entries(subCategories).map(([subCategory, techs]) => (
-                    <div key={subCategory} className="space-y-3">
-                      <h4 className="text-sm font-semibold text-muted-foreground px-2">
-                        {subCategory}
-                      </h4>
-                      <div className="grid gap-3">
-                        {techs.sort((a, b) => a.displayOrder - b.displayOrder).map(tech => (
-                          <div
-                            key={tech.name}
-                            onClick={() => toggleTechnology(tech)}
-                          >
-                            <DraggableTechCard 
-                              tech={tech} 
-                              isSelected={selectedTechs.some(t => t.name === tech.name)}
-                            />
-                          </div>
-                        ))}
-                      </div>
+          {/* Result */}
+          {result && <ResultCard result={result} />}
+
+          {/* Technologies Grid */}
+          <div className="mt-8 space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-1">Available Technologies</h2>
+              <p className="text-sm text-muted-foreground">Click or drag any technology to add it to your stack</p>
+            </div>
+
+            {Object.entries(groupedTechs).map(([mainCategory, subCategories]) => (
+              <div key={mainCategory} className={`rounded-xl p-6 ${getCategoryBgColor(mainCategory)}`}>
+                <h3 className={`text-2xl font-bold mb-4 bg-gradient-to-r ${getCategoryHeaderColor(mainCategory)} bg-clip-text text-transparent flex items-center gap-2`}>
+                  {mainCategory === "Frontend" && <Palette className="h-6 w-6 text-blue-600" />}
+                  {mainCategory === "Backend" && <Settings className="h-6 w-6 text-green-600" />}
+                  {mainCategory === "Database" && <Database className="h-6 w-6 text-orange-600" />}
+                  {mainCategory === "AI/ML" && <Bot className="h-6 w-6 text-purple-600" />}
+                  {mainCategory}
+                </h3>
+                
+                {Object.entries(subCategories).map(([subCategory, techs]) => (
+                  <div key={subCategory} className="mb-6 last:mb-0">
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                      {subCategory}
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                      {techs.sort((a, b) => a.displayOrder - b.displayOrder).map(tech => (
+                        <div
+                          key={tech.name}
+                          onClick={() => toggleTechnology(tech)}
+                        >
+                          <DraggableTechCard 
+                            tech={tech} 
+                            isSelected={selectedTechs.some(t => t.name === tech.name)}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Right Panel: Workspace + Result */}
-            <div className="space-y-6">
-              <DropZone 
-                selectedTechs={selectedTechs} 
-                onRemove={removeTech}
-              />
-
-              {result && <ResultCard result={result} />}
-            </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
 
           {/* Drag Overlay */}
           <DragOverlay>
             {activeTech && (
-              <div className="bg-card border-2 border-primary rounded-lg p-4 shadow-2xl opacity-80">
-                <div className="font-bold">{activeTech.name}</div>
+              <div className="bg-card border-2 border-primary rounded-md p-3 shadow-2xl opacity-90">
+                <div className="font-bold text-sm">{activeTech.name}</div>
               </div>
             )}
           </DragOverlay>
@@ -458,7 +479,7 @@ export default function CourseExplorer() {
         @keyframes scaleIn {
           from {
             opacity: 0;
-            transform: scale(0.8);
+            transform: scale(0.9);
           }
           to {
             opacity: 1;
@@ -467,24 +488,7 @@ export default function CourseExplorer() {
         }
 
         .animate-scale-in {
-          animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: hsl(var(--muted-foreground) / 0.3);
-          border-radius: 3px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: hsl(var(--muted-foreground) / 0.5);
+          animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
     </div>

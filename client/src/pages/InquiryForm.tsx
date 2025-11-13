@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { CheckCircle2 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { fetchAllData } from "@/utils/googleSheets";
 import { useToast } from "@/hooks/use-toast";
 import type { InquiryFormData } from "@/types";
@@ -48,7 +48,27 @@ export default function InquiryForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [courses, setCourses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [location] = useLocation();
   const { toast } = useToast();
+
+  const getPreselectedCourse = () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('course') || "";
+  };
+
+  const form = useForm<InquiryFormData>({
+    resolver: zodResolver(inquirySchema),
+    defaultValues: {
+      name: "",
+      fatherName: "",
+      phone: "+91",
+      email: "",
+      dob: "",
+      courseInterest: getPreselectedCourse(),
+      college: "",
+      branch: "",
+    },
+  });
 
   useEffect(() => {
     loadCourses();
@@ -67,20 +87,6 @@ export default function InquiryForm() {
       setLoading(false);
     }
   };
-
-  const form = useForm<InquiryFormData>({
-    resolver: zodResolver(inquirySchema),
-    defaultValues: {
-      name: "",
-      fatherName: "",
-      phone: "+91",
-      email: "",
-      dob: "",
-      courseInterest: "",
-      college: "",
-      branch: "",
-    },
-  });
 
   const onSubmit = async (data: InquiryFormData) => {
     const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
