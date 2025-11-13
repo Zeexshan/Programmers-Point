@@ -50,8 +50,8 @@ function DraggableTechCard({ tech, isSelected }: { tech: Technology; isSelected:
       {...attributes}
       className={`
         relative bg-gradient-to-br ${getCategoryColor(tech.mainCategory)}
-        border-2 rounded-md p-3 cursor-grab active:cursor-grabbing
-        transition-all duration-200 hover-elevate
+        border-2 rounded-md p-3 cursor-pointer
+        transition-all duration-200 hover-elevate hover:scale-105
         ${isSelected ? 'ring-2 ring-primary' : ''}
         ${isDragging ? 'opacity-50' : ''}
       `}
@@ -410,8 +410,8 @@ export default function CourseExplorer() {
         </div>
 
         <DndContext onDragEnd={handleDragEnd} onDragStart={(e) => setActiveDragId(e.active.id as string)}>
-          {/* Drop Zone */}
-          <div className="mb-6">
+          {/* Sticky Drop Zone */}
+          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b pb-4 -mx-4 px-4 md:-mx-6 md:px-6 mb-6">
             <DropZone 
               selectedTechs={selectedTechs} 
               onRemove={removeTech}
@@ -425,7 +425,8 @@ export default function CourseExplorer() {
           <div className="mt-8 space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-1">Available Technologies</h2>
-              <p className="text-sm text-muted-foreground">Click or drag any technology to add it to your stack</p>
+              <p className="text-base font-medium text-primary mb-2">Simply click any technology to add it to your stack</p>
+              <p className="text-sm text-muted-foreground">No need to drag - clicking is faster and easier</p>
             </div>
 
             {Object.entries(groupedTechs).map(([mainCategory, subCategories]) => (
